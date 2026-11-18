@@ -1,0 +1,997 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mijn Levensbalans</title>
+<meta name="description" content="Wekelijkse check-in, focuslijst en trends voor relatie, wonen, werk en gezondheid.">
+<meta name="theme-color" content="#1f4f54">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Levensbalans">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,650&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Layout: one calm column (max 720px), bottom tab bar like a phone app, summary before detail. */
+:root {
+  --bg: #f3f5f6;
+  --surface: #ffffff;
+  --surface-2: #e8eef0;
+  --line: #d6dde0;
+  --fg: #172126;
+  --fg-2: #4b5a61;
+  --fg-3: #6f7f87;
+  --accent: #1f6f74;
+  --accent-ink: #ffffff;
+  --accent-soft: #dcecec;
+  --warn: #8f5300;
+  --warn-soft: #fbefd9;
+  --good: #23743a;
+  --good-soft: #e1f1e4;
+  --p-relatie: #eb6834;
+  --p-wonen: #1baf7a;
+  --p-werk: #2a78d6;
+  --p-gezondheid: #eda100;
+  --tint: 13%;
+  --font-display: "Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --r: 16px;
+  --nav-h: 64px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #10161a; --surface: #182126; --surface-2: #212c31; --line: #2e3a40;
+    --fg: #e8eef0; --fg-2: #b3c0c5; --fg-3: #8a9aa3;
+    --accent: #6fb8bb; --accent-ink: #0f2224; --accent-soft: #1d3436;
+    --warn: #e9b155; --warn-soft: #3a2c14; --good: #74c98a; --good-soft: #1b3322;
+    --p-relatie: #d95926; --p-wonen: #199e70; --p-werk: #3987e5; --p-gezondheid: #c98500;
+    --tint: 20%;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--font-body); font-size: 15px; line-height: 1.5;
+  padding-top: env(safe-area-inset-top, 0px);
+}
+.wrap {
+  max-width: 720px; margin: 0 auto;
+  padding-block: 18px calc(var(--nav-h) + 28px + env(safe-area-inset-bottom, 0px));
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 16px;
+}
+.view { display: grid; gap: 16px; }
+.view[hidden] { display: none; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 650; text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+h1 { font-size: 1.7rem; line-height: 1.15; }
+h2 { font-size: 1.18rem; }
+h3 { font-size: 1.02rem; }
+p { margin: 0; }
+.muted { color: var(--fg-2); }
+.small { font-size: 0.85rem; }
+.label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--fg-3); font-weight: 600; }
+.num { font-variant-numeric: tabular-nums; }
+[hidden] { display: none !important; }
+
+header.top { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 4px 16px; }
+.weekline { color: var(--fg-2); font-size: 0.88rem; }
+
+/* bottom nav */
+nav.tabs {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+  background: var(--surface); border-top: 1px solid var(--line);
+  padding: 6px max(8px, env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px));
+  display: flex; justify-content: center;
+}
+nav.tabs .in { display: grid; grid-template-columns: repeat(4, 1fr); width: 100%; max-width: 720px; }
+nav.tabs a {
+  display: grid; justify-items: center; gap: 2px; padding: 6px 2px; border-radius: 10px; text-decoration: none;
+  color: var(--fg-3); font-weight: 600; font-size: 0.72rem;
+}
+nav.tabs a svg { width: 22px; height: 22px; }
+nav.tabs a[aria-current="page"] { color: var(--accent); }
+a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.panel { background: var(--surface); border-radius: var(--r); padding: 18px; display: grid; gap: 12px; min-width: 0; }
+.notice { font-size: 0.85rem; color: var(--fg-2); background: var(--surface-2); border-radius: 12px; padding: 10px 12px; }
+
+.ic { width: 18px; height: 18px; flex: none; }
+.pchip { display: inline-flex; align-items: center; gap: 5px; font-size: 0.75rem; font-weight: 600; padding: 2px 8px 2px 6px; border-radius: 99px;
+  background: color-mix(in srgb, var(--pc) var(--tint), var(--surface)); color: var(--fg); white-space: nowrap; }
+.pchip .ic { width: 14px; height: 14px; color: var(--pc); }
+
+/* next step banner */
+.focusband { background: var(--accent-soft); border-radius: var(--r); padding: 16px 18px; display: grid; gap: 4px; text-decoration: none; color: inherit; }
+.focusband .text { font-family: var(--font-display); font-size: 1.12rem; font-weight: 500; overflow-wrap: anywhere; }
+
+/* total + radar */
+.balance { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; align-items: center; }
+@media (max-width: 480px) { .balance { grid-template-columns: 1fr; } }
+.total { display: grid; grid-template-columns: auto minmax(0,1fr); gap: 16px; align-items: center; }
+.ring { width: 112px; height: 112px; position: relative; }
+.ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.ring .val { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
+.ring .val b { font-family: var(--font-display); font-size: 1.9rem; line-height: 1; }
+.ring .val span { font-size: 0.75rem; color: var(--fg-3); }
+.plist { display: grid; gap: 6px; }
+.plist .row { display: flex; justify-content: space-between; gap: 8px; align-items: center; font-size: 0.88rem; }
+.radar svg { width: 100%; max-width: 380px; display: block; margin: 0 auto; overflow: visible; }
+
+/* pillar tiles */
+.tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 380px) { .tiles { grid-template-columns: 1fr; } }
+.tile {
+  background: color-mix(in srgb, var(--pc) var(--tint), var(--surface)); border-radius: var(--r); padding: 14px; display: grid; gap: 8px;
+  border: 2px solid transparent; text-align: left; font: inherit; color: inherit; cursor: pointer; min-width: 0;
+}
+.tile[aria-expanded="true"] { border-color: var(--pc); }
+.tile .name { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+.tile .name .ic { color: var(--pc); }
+.tile .scores { display: flex; gap: 14px; }
+.tile .big { font-family: var(--font-display); font-size: 1.55rem; font-weight: 650; line-height: 1; }
+.tile .big small { font-size: 0.78rem; color: var(--fg-3); font-weight: 500; }
+.tile .sub { font-size: 0.72rem; color: var(--fg-2); }
+.tile svg.spark { width: 100%; height: 30px; display: block; }
+.dirs { font-size: 0.78rem; color: var(--fg-2); }
+
+.detail .row { display: grid; grid-template-columns: minmax(0,1fr) 34px 34px 24px 64px; gap: 8px; align-items: center; padding: 9px 0; border-top: 1px solid var(--line); font-size: 0.9rem; }
+.detail .row:first-child { border-top: 0; }
+.detail .row svg { width: 64px; height: 22px; }
+.detail .head { font-size: 0.68rem; color: var(--fg-3); text-transform: uppercase; letter-spacing: .06em; }
+@media (max-width: 420px) { .detail .row { grid-template-columns: minmax(0,1fr) 34px 34px 24px; } .detail .row .sp { display: none; } }
+
+/* signals */
+.signal { display: grid; grid-template-columns: 20px minmax(0,1fr); gap: 10px; align-items: start; padding: 10px 12px; border-radius: 12px; }
+.signal.neg { background: var(--warn-soft); }
+.signal.pos { background: var(--good-soft); }
+.signal .si { font-weight: 700; text-align: center; }
+.signal.neg .si { color: var(--warn); }
+.signal.pos .si { color: var(--good); }
+.signals { display: grid; gap: 8px; }
+
+/* segmented */
+.seg { display: inline-flex; background: var(--surface-2); border-radius: 10px; padding: 3px; gap: 2px; }
+.seg button { border: 0; background: transparent; font: inherit; font-size: 0.82rem; font-weight: 600; color: var(--fg-2); padding: 6px 10px; border-radius: 8px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--fg); box-shadow: 0 1px 2px rgba(0,0,0,.1); }
+.chart-head { display: flex; flex-wrap: wrap; gap: 8px 12px; justify-content: space-between; align-items: center; }
+.chart-box { position: relative; min-width: 0; }
+.chart-box svg { display: block; width: 100%; overflow: visible; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 0.82rem; color: var(--fg-2); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.dot { width: 10px; height: 10px; border-radius: 50%; flex: none; display: inline-block; }
+.tip {
+  position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--line);
+  border-radius: 10px; padding: 8px 10px; font-size: 0.8rem; box-shadow: 0 4px 14px rgba(0,0,0,.14);
+  min-width: 150px; display: grid; gap: 3px; z-index: 2;
+}
+.tip .r { display: flex; justify-content: space-between; gap: 12px; align-items: center; }
+.tip .r span:first-child { display: inline-flex; gap: 6px; align-items: center; }
+
+.notes { display: grid; gap: 10px; }
+.note { border-top: 1px solid var(--line); padding-top: 10px; display: grid; gap: 4px; }
+.note:first-child { border-top: 0; padding-top: 0; }
+.note p { white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* forms */
+.ci-top { display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; align-items: center; }
+select, input[type="text"], textarea {
+  font: inherit; font-size: 16px; color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 9px 11px; width: 100%;
+}
+select { width: auto; max-width: 100%; }
+textarea { min-height: 64px; resize: vertical; }
+details.pillar { background: var(--surface); border-radius: var(--r); overflow: hidden; }
+details.pillar > summary {
+  list-style: none; cursor: pointer; padding: 14px 18px; display: flex; align-items: center; gap: 10px; justify-content: space-between;
+  background: color-mix(in srgb, var(--pc) var(--tint), var(--surface));
+}
+details.pillar > summary::-webkit-details-marker { display: none; }
+details.pillar > summary .t { display: flex; align-items: center; gap: 10px; }
+details.pillar > summary .t .ic { color: var(--pc); width: 20px; height: 20px; }
+details.pillar > summary .prog { font-size: 0.8rem; color: var(--fg-2); margin-left: auto; }
+details.pillar > summary::after { content: "+"; font-size: 1.2rem; color: var(--fg-3); width: 18px; text-align: center; }
+details.pillar[open] > summary::after { content: "–"; }
+.pillar-body { padding: 4px 18px 18px; display: grid; gap: 14px; }
+.item { display: grid; gap: 8px; padding-top: 14px; border-top: 1px solid var(--line); }
+.item:first-child { border-top: 0; }
+.item .ih { display: grid; gap: 0; }
+.item .ih b { font-weight: 600; }
+.sl { display: grid; grid-template-columns: 62px minmax(0,1fr) 30px; gap: 10px; align-items: center; font-size: 0.85rem; color: var(--fg-2); }
+.sl output { font-weight: 600; color: var(--fg); text-align: right; font-variant-numeric: tabular-nums; }
+.sl.unset output { color: var(--fg-3); font-weight: 400; }
+.sl.unset input { opacity: .4; }
+input[type="range"] { width: 100%; accent-color: var(--accent); height: 30px; margin: 0; }
+.dirrow { display: grid; grid-template-columns: 62px minmax(0,1fr); gap: 10px; align-items: center; font-size: 0.85rem; color: var(--fg-2); }
+.dirbtns { display: flex; gap: 6px; }
+.dirbtns button {
+  flex: 1; border: 1px solid var(--line); background: var(--surface); color: var(--fg-2); font: inherit; font-size: 0.85rem;
+  padding: 7px 2px; border-radius: 9px; cursor: pointer; min-height: 36px;
+}
+.dirbtns button[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--fg); font-weight: 600; }
+.field { display: grid; gap: 6px; }
+.field > label { font-weight: 600; font-size: 0.92rem; }
+.check { display: flex; gap: 8px; align-items: center; font-size: 0.88rem; color: var(--fg-2); }
+.check input { width: 18px; height: 18px; accent-color: var(--accent); }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.btn { border: 0; background: var(--accent); color: var(--accent-ink); font: inherit; font-weight: 600; padding: 11px 18px; border-radius: 11px; cursor: pointer; text-decoration: none; display: inline-block; }
+.btn.ghost { background: var(--surface-2); color: var(--fg); }
+.btn:disabled { opacity: .6; }
+.status { font-size: 0.88rem; color: var(--fg-2); }
+.example-tag { display: inline-block; font-size: 0.72rem; font-weight: 600; color: var(--fg-3); border: 1px dashed var(--fg-3); padding: 2px 8px; border-radius: 99px; }
+
+/* focus list */
+.calm { display: grid; grid-template-columns: auto minmax(0,1fr); gap: 16px; align-items: center; }
+.calm .ring { width: 92px; height: 92px; }
+.calm .ring .val b { font-size: 1.5rem; }
+.addrow { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 8px; }
+.addrow2 { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.tasks { display: grid; gap: 8px; }
+.task { background: var(--surface); border-radius: 14px; display: grid; }
+.task .main { display: grid; grid-template-columns: 44px minmax(0,1fr) 40px; align-items: center; gap: 4px; padding: 8px 6px 8px 4px; }
+.tick {
+  width: 44px; height: 44px; border: 0; background: transparent; cursor: pointer; display: grid; place-items: center; color: var(--fg-3);
+}
+.tick .box { width: 24px; height: 24px; border-radius: 8px; border: 2px solid var(--fg-3); display: grid; place-items: center; transition: background .2s, border-color .2s; }
+.task.done .tick .box { background: var(--good); border-color: var(--good); color: var(--surface); }
+.task .body { min-width: 0; cursor: pointer; display: grid; gap: 3px; padding: 4px 0; }
+.task .title { font-weight: 600; overflow-wrap: anywhere; }
+.task.done .title { color: var(--fg-3); text-decoration: line-through; text-decoration-thickness: 1px; }
+.task .meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 0.78rem; color: var(--fg-3); }
+.star { width: 40px; height: 40px; border: 0; background: transparent; cursor: pointer; color: var(--fg-3); font-size: 1.15rem; }
+.star[aria-pressed="true"] { color: var(--p-gezondheid); }
+.task .more { padding: 0 14px 14px 52px; display: grid; gap: 10px; }
+.steps { display: grid; gap: 2px; }
+.step { display: grid; grid-template-columns: 32px minmax(0,1fr) 32px; align-items: center; gap: 4px; font-size: 0.9rem; }
+.step input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--good); margin: 0 auto; }
+.step.done span { color: var(--fg-3); text-decoration: line-through; }
+.xbtn { border: 0; background: transparent; color: var(--fg-3); cursor: pointer; font-size: 1rem; width: 32px; height: 32px; }
+.linkbtn { border: 0; background: transparent; color: var(--fg-2); font: inherit; font-size: 0.85rem; cursor: pointer; text-decoration: underline; padding: 4px 0; }
+.linkbtn.danger { color: var(--warn); }
+.grouphead { display: flex; justify-content: space-between; align-items: baseline; padding: 4px 2px 0; }
+details.donelist > summary { cursor: pointer; padding: 6px 2px; color: var(--fg-2); font-weight: 600; font-size: 0.9rem; }
+.emptyline { font-size: 0.88rem; color: var(--fg-3); padding: 4px 2px; }
+@media (prefers-reduced-motion: no-preference) { .task.justdone { animation: settle .6s ease; } @keyframes settle { 0% { transform: scale(1); } 30% { transform: scale(1.02); } 100% { transform: scale(1); } } }
+
+/* review */
+.cmp .row { display: grid; grid-template-columns: minmax(0,1fr) 78px 78px; gap: 8px; padding: 9px 0; border-top: 1px solid var(--line); align-items: center; font-size: 0.9rem; }
+.cmp .row:first-child { border-top: 0; }
+.delta.up { color: var(--good); }
+.delta.down { color: var(--warn); }
+.motto { text-align: center; font-family: var(--font-display); font-size: 0.95rem; color: var(--fg-3); padding: 6px 12px; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-relatie" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></symbol>
+  <symbol id="i-wonen" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M4 11l8-7 8 7v9h-5v-6h-6v6H4z"/></symbol>
+  <symbol id="i-werk" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5h6v2M3 13h18"/></g></symbol>
+  <symbol id="i-gezondheid" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" d="M3 12h4l2-4 3 8 2-4h7"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></g></symbol>
+  <symbol id="i-focus" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l2 2 3-3M4 13l2 2 3-3M12 7h8M12 14h8M5 20h15"/></g></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 18V12M10 18V7M15 18v-8M20 18V4"/></g></symbol>
+  <symbol id="i-review" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></g></symbol>
+  <symbol id="i-tick" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="M5 12l5 5 9-10"/></symbol>
+</svg>
+
+<div class="wrap">
+  <header class="top">
+    <h1>Mijn Levensbalans</h1>
+    <span class="weekline" id="weekline"></span>
+  </header>
+  <div id="storeNotice" class="notice" hidden></div>
+
+  <!-- OVERZICHT -->
+  <section id="view-overzicht" class="view">
+    <a id="focusBand" class="focusband" href="#focus" hidden>
+      <span class="label">Eerstvolgende stap</span>
+      <span class="text" id="focusText"></span>
+    </a>
+
+    <div class="panel" id="focusSummary"></div>
+
+    <div id="emptyBox" class="panel" hidden>
+      <h2>Nog geen check-ins</h2>
+      <p class="muted">Eén keer per week, een minuut of vijf. Geef per onderdeel aan hoe het ervoor staat, hoe je je erover voelt en welke kant het op gaat. Na een paar weken zie je hier je trends.</p>
+      <div><span class="example-tag">Voorbeeld, geen echte scores</span></div>
+      <div class="chart-box" id="exampleChart"></div>
+      <div class="actions"><a class="btn" href="#checkin">Eerste check-in doen</a></div>
+    </div>
+
+    <div id="dashBox" class="view" hidden>
+      <div class="panel">
+        <h2>Mijn balans</h2>
+        <div class="balance">
+          <div class="total">
+            <div class="ring" id="totalRing"></div>
+            <div class="plist" id="pillarList"></div>
+          </div>
+          <div class="radar" id="radar"></div>
+        </div>
+        <p class="small muted" id="balanceHint"></p>
+      </div>
+
+      <div class="tiles" id="tiles"></div>
+      <div class="panel" id="detailPanel" hidden></div>
+
+      <div class="panel">
+        <h2>Signalen</h2>
+        <div class="signals" id="signals"></div>
+        <p class="small muted">Een lage score geeft hier geen signaal. Alleen een daling die een paar weken aanhoudt, of een richting die je drie keer op rij als ↓ geeft.</p>
+      </div>
+
+      <div class="panel">
+        <div class="chart-head">
+          <h2>Ontwikkeling</h2>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <div class="seg" id="metricSeg"><button type="button" data-v="s">Situatie</button><button type="button" data-v="g">Gevoel</button></div>
+            <div class="seg" id="rangeSeg"><button type="button" data-v="12">12 weken</button><button type="button" data-v="all">Alles</button></div>
+          </div>
+        </div>
+        <div class="legend" id="legend"></div>
+        <div class="chart-box" id="mainChart"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Laatste notities</h2>
+        <div class="notes" id="notes"></div>
+      </div>
+    </div>
+    <p class="motto">Balans is geen eindbestemming, maar steeds opnieuw afstemmen.</p>
+  </section>
+
+  <!-- FOCUS -->
+  <section id="view-focus" class="view" hidden>
+    <div class="panel">
+      <div class="calm">
+        <div class="ring" id="calmRing"></div>
+        <div style="display:grid;gap:4px">
+          <h2 id="calmTitle">Focus</h2>
+          <p class="small muted" id="calmText"></p>
+        </div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="addrow">
+        <input type="text" id="newTask" placeholder="Wat moet er gebeuren?" aria-label="Nieuwe taak" enterkeyhint="done">
+        <button class="btn" type="button" id="addTask">Toevoegen</button>
+      </div>
+      <div class="addrow2">
+        <select id="newPillar" aria-label="Pilaar"></select>
+        <label class="check"><input type="checkbox" id="newNow" checked> Nu mee bezig</label>
+      </div>
+    </div>
+    <div class="grouphead"><h3>Nu</h3><span class="small muted">Houd dit kort, drie tot vijf dingen</span></div>
+    <div class="tasks" id="tasksNow"></div>
+    <div class="grouphead"><h3>Later</h3></div>
+    <div class="tasks" id="tasksLater"></div>
+    <details class="donelist" id="doneWrap">
+      <summary id="doneSummary">Gedaan</summary>
+      <div class="tasks" id="tasksDone"></div>
+    </details>
+  </section>
+
+  <!-- CHECK-IN -->
+  <section id="view-checkin" class="view" hidden>
+    <div class="panel">
+      <div class="ci-top">
+        <h2 id="ciTitle">Check-in</h2>
+        <select id="weekSel" aria-label="Week"></select>
+      </div>
+      <p class="small muted" id="ciHint"></p>
+    </div>
+    <div id="pillarForms" class="view" style="gap:10px"></div>
+    <div class="panel">
+      <h2>Reflectie</h2>
+      <div class="field"><label for="rGood">Wat gaat er goed?</label><textarea id="rGood"></textarea></div>
+      <div class="field"><label for="rAttn">Wat vraagt aandacht?</label><textarea id="rAttn"></textarea></div>
+      <div class="field">
+        <label for="rNext">Mijn eerstvolgende stap</label>
+        <input type="text" id="rNext" placeholder="Bijvoorbeeld: hypotheekadviseur bellen">
+        <label class="check"><input type="checkbox" id="rNextTask" checked> Ook op mijn focuslijst zetten</label>
+      </div>
+      <div class="actions">
+        <button class="btn" type="button" id="saveBtn">Check-in bewaren</button>
+        <span class="status" id="saveStatus" role="status"></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- TERUGBLIK -->
+  <section id="view-terugblik" class="view" hidden>
+    <div class="panel">
+      <div class="ci-top">
+        <h2>Maandelijkse terugblik</h2>
+        <select id="monthSel" aria-label="Maand"></select>
+      </div>
+      <p class="small muted">Een kwartiertje per maand. Kijk naar de cijfers en schrijf op wat je opvalt.</p>
+    </div>
+    <div class="panel">
+      <h3>Deze maand tegenover vorige maand</h3>
+      <p class="small muted" id="cmpHint"></p>
+      <div class="cmp" id="cmp"></div>
+    </div>
+    <div class="panel" id="moverPanel" hidden>
+      <h3>Grootste verschuivingen in gevoel</h3>
+      <div class="signals" id="movers"></div>
+    </div>
+    <div class="panel">
+      <p class="small muted" id="monthDone"></p>
+      <div class="field"><label for="q1">Welke pilaar krijgt te weinig aandacht?</label><textarea id="q1"></textarea></div>
+      <div class="field"><label for="q2">Wat wordt sterker?</label><textarea id="q2"></textarea></div>
+      <div class="field"><label for="q3">Wat wil ik aanpassen?</label><textarea id="q3"></textarea></div>
+      <div class="field" id="q4wrap" hidden><label for="q4">Kwartaalvraag: past mijn leven nog bij het leven dat ik wil leiden?</label><textarea id="q4"></textarea></div>
+      <div class="actions">
+        <button class="btn" type="button" id="saveRefl">Terugblik bewaren</button>
+        <span class="status" id="reflStatus" role="status"></span>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>Back-up</h3>
+      <p class="small muted">Alles staat alleen op dit toestel. Maak af en toe een back-up, bijvoorbeeld naar iCloud Drive of je mail, zodat je niets kwijtraakt als je van telefoon wisselt.</p>
+      <div class="actions">
+        <button class="btn ghost" type="button" id="exportBtn">Back-up maken</button>
+        <label class="btn ghost" for="importFile" style="cursor:pointer">Back-up terugzetten</label>
+        <input type="file" id="importFile" accept="application/json,.json" hidden>
+      </div>
+      <span class="status" id="backupStatus" role="status"></span>
+    </div>
+  </section>
+</div>
+
+<nav class="tabs" aria-label="Onderdelen">
+  <div class="in">
+    <a href="#overzicht" id="tab-overzicht"><svg><use href="#i-home"/></svg>Overzicht</a>
+    <a href="#focus" id="tab-focus"><svg><use href="#i-focus"/></svg>Focus</a>
+    <a href="#checkin" id="tab-checkin"><svg><use href="#i-check"/></svg>Check-in</a>
+    <a href="#terugblik" id="tab-terugblik"><svg><use href="#i-review"/></svg>Terugblik</a>
+  </div>
+</nav>
+
+<script>
+(() => {
+  const PILLARS = [
+    { id: "relatie", name: "Relatie", full: "Relatie & verbinding", items: [
+      { id: "kinderen", name: "Kinderen", hint: "Tijd, contact en band met de kinderen" },
+      { id: "coouder", name: "Co-ouderschap", hint: "Samenwerking en afspraken met Samara" },
+      { id: "scheiding", name: "Afwikkeling scheiding", hint: "Mediation, verdeling, papierwerk" },
+      { id: "naasten", name: "Familie & vrienden", hint: "Steun en mensen om je heen" } ] },
+    { id: "wonen", name: "Wonen", full: "Wonen & leefomgeving", items: [
+      { id: "zekerheid", name: "Woonzekerheid", hint: "Nieuwe woning, huur of koop" },
+      { id: "rusthuis", name: "Rust in huis", hint: "Spanning in de huidige woonsituatie" },
+      { id: "thuisgevoel", name: "Thuisgevoel & comfort", hint: "Ook voor de kinderen" },
+      { id: "omgeving", name: "Fijne woonomgeving", hint: "Soest, buurt, natuur, voorzieningen" } ] },
+    { id: "werk", name: "Werk", full: "Werk & financiën", items: [
+      { id: "plezier", name: "Werkplezier & uitdaging", hint: "Energie uit je werk" },
+      { id: "opdrachten", name: "Opdrachten & pipeline", hint: "Freelanceklussen, nieuwe klanten" },
+      { id: "inkomen", name: "Inkomen & buffer", hint: "Stabiliteit, spaargeld, reserves" },
+      { id: "vrijheid", name: "Vrijheid & autonomie", hint: "Eigen regie over je tijd en keuzes" } ] },
+    { id: "gezondheid", name: "Gezondheid", full: "Gezondheid", items: [
+      { id: "fysiek", name: "Fysieke gezondheid", hint: "Conditie, klachten, vitaliteit" },
+      { id: "mentaal", name: "Mentale rust", hint: "Stress, piekeren, veerkracht" },
+      { id: "slaap", name: "Energie & slaap", hint: "Rust, herstel, fit zijn" },
+      { id: "leefstijl", name: "Leefstijl & beweging", hint: "Voeding, sport, gewoontes" } ] },
+  ];
+  const ALL_ITEMS = PILLARS.flatMap(p => p.items.map(i => ({ ...i, pillar: p.id })));
+  const P = id => PILLARS.find(p => p.id === id);
+  const DIRS = [ { v: "up", t: "↑ beter" }, { v: "flat", t: "→ gelijk" }, { v: "down", t: "↓ slechter" } ];
+  const ARROW = { up: "↑", flat: "→", down: "↓" };
+  const MONTHS = ["januari","februari","maart","april","mei","juni","juli","augustus","september","oktober","november","december"];
+  const MON3 = ["jan","feb","mrt","apr","mei","jun","jul","aug","sep","okt","nov","dec"];
+  const MARK = ["circle", "square", "diamond", "triangle"]; // second encoding next to colour
+
+  const $ = id => document.getElementById(id);
+  const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+  const pc = id => css("--p-" + id);
+  const icon = (id, cls = "ic") => `<svg class="${cls}" aria-hidden="true"><use href="#i-${id}"/></svg>`;
+  const fmt = n => n == null || isNaN(n) ? "–" : (Math.round(n * 10) / 10).toLocaleString("nl-NL", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const avg = a => { const v = a.filter(x => typeof x === "number"); return v.length ? v.reduce((s, x) => s + x, 0) / v.length : null; };
+  const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+  const chip = id => `<span class="pchip" style="--pc:var(--p-${id})">${icon(id)}${P(id).name}</span>`;
+
+  // ---------- weeks ----------
+  function isoWeek(d) {
+    const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    const day = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - day);
+    const y = t.getUTCFullYear(); const w = Math.ceil(((t - Date.UTC(y, 0, 1)) / 864e5 + 1) / 7);
+    return `${y}-W${String(w).padStart(2, "0")}`;
+  }
+  function weekMonday(key) {
+    const [y, w] = key.split("-W").map(Number);
+    const jan4 = new Date(Date.UTC(y, 0, 4)); const day = jan4.getUTCDay() || 7;
+    const mon = new Date(jan4); mon.setUTCDate(jan4.getUTCDate() - day + 1 + (w - 1) * 7); return mon;
+  }
+  function weekRange(key) {
+    const m = weekMonday(key); const s = new Date(m); s.setUTCDate(m.getUTCDate() + 6);
+    return `${m.getUTCDate()} ${MON3[m.getUTCMonth()]} – ${s.getUTCDate()} ${MON3[s.getUTCMonth()]}`;
+  }
+  const weekNum = key => Number(key.split("-W")[1]);
+  function weekMonth(key) { const m = weekMonday(key); m.setUTCDate(m.getUTCDate() + 3); return `${m.getUTCFullYear()}-${String(m.getUTCMonth() + 1).padStart(2, "0")}`; }
+  const monthOfDate = iso => { const d = new Date(iso); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`; };
+  const nowWeek = isoWeek(new Date());
+
+  // ---------- storage (this device only) ----------
+  const KEY = "levensbalans-v1";
+  let state = { checkins: {}, reflections: {}, tasks: [], seeded: false };
+  let storageOk = true;
+  function load() {
+    try { const d = JSON.parse(localStorage.getItem(KEY)); if (d) state = { checkins: {}, reflections: {}, tasks: [], ...d }; }
+    catch { storageOk = false; }
+    if (!state.seeded) {
+      const now = new Date().toISOString();
+      state.tasks = [
+        { id: uid(), title: "Woning vinden in Soest", pillar: "wonen", now: true, done: false, createdAt: now, steps: [], note: "" },
+        { id: uid(), title: "Weg uit de gespannen woonsituatie", pillar: "wonen", now: true, done: false, createdAt: now, steps: [], note: "" },
+        { id: uid(), title: "Nieuwe freelanceklus landen", pillar: "werk", now: true, done: false, createdAt: now, steps: [], note: "" },
+      ];
+      state.seeded = true; persist();
+    }
+  }
+  function persist() {
+    try { localStorage.setItem(KEY, JSON.stringify(state)); storageOk = true; return true; }
+    catch { storageOk = false; showNotice(); return false; }
+  }
+  function showNotice() {
+    const n = $("storeNotice");
+    if (!storageOk) { n.hidden = false; n.textContent = "Opslaan lukt niet in deze browser (privémodus?). Open de app vanaf je beginscherm of in een gewoon venster."; }
+    else n.hidden = true;
+  }
+  if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+
+  // ---------- derived ----------
+  const sortedKeys = () => Object.keys(state.checkins).sort();
+  const series = () => sortedKeys().map(k => ({ key: k, ...state.checkins[k] }));
+  const pillarVal = (ci, pid, m) => avg(P(pid).items.map(i => ci.scores?.[i.id]?.[m]));
+  const pillarBoth = (ci, pid) => avg(P(pid).items.flatMap(i => [ci.scores?.[i.id]?.s, ci.scores?.[i.id]?.g]));
+  const itemVal = (ci, iid, m) => { const v = ci.scores?.[iid]?.[m]; return typeof v === "number" ? v : null; };
+
+  function slope(v) { const n = v.length, mx = (n - 1) / 2, my = v.reduce((a, b) => a + b, 0) / n; let a = 0, b = 0; v.forEach((y, x) => { a += (x - mx) * (y - my); b += (x - mx) ** 2; }); return b ? a / b : 0; }
+  function trend(vals) {
+    const v = vals.slice(-4);
+    if (v.length < 4 || v.some(x => x == null)) return 0;
+    const s = slope(v), tot = v[3] - v[0], steps = v.slice(1).map((x, i) => x - v[i]);
+    if (s <= -0.5 && tot <= -2 && steps.every(d => d <= 0.5)) return -1;
+    if (s >= 0.5 && tot >= 2 && steps.every(d => d >= -0.5)) return 1;
+    return 0;
+  }
+  function computeSignals() {
+    const S = series(), neg = [], pos = [], MN = { s: "situatie", g: "gevoel" };
+    ALL_ITEMS.forEach(it => {
+      if (S.length >= 3 && S.slice(-3).every(c => c.scores?.[it.id]?.r === "down")) neg.push(`<b>${esc(it.name)}</b>: drie check-ins op rij geef je de richting ↓.`);
+      ["g", "s"].forEach(m => {
+        const vals = S.map(c => itemVal(c, it.id, m)), t = trend(vals), l = vals.slice(-4);
+        if (t === -1) neg.push(`<b>${esc(it.name)}</b>: ${MN[m]} daalt al vier weken, van ${l[0]} naar ${l[3]}.`);
+        if (t === 1) pos.push(`<b>${esc(it.name)}</b>: ${MN[m]} stijgt al vier weken, van ${l[0]} naar ${l[3]}.`);
+      });
+    });
+    PILLARS.forEach(p => {
+      const v = S.map(c => pillarVal(c, p.id, "g")).slice(-4);
+      if (v.length === 4 && v.every(x => x != null) && v[3] - v[0] <= -1.5 && slope(v) <= -0.4)
+        neg.push(`<b>${p.full}</b> als geheel: je gevoel zakt al vier weken (gemiddeld ${fmt(v[0])} → ${fmt(v[3])}).`);
+    });
+    return { neg, pos };
+  }
+
+  // ---------- drawing ----------
+  function ring(el, frac, big, small, color) {
+    const r = 42, c = 2 * Math.PI * r, f = Math.max(0, Math.min(1, frac || 0));
+    el.innerHTML = `<svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="${r}" fill="none" stroke="${css("--surface-2")}" stroke-width="10"/>
+      <circle cx="50" cy="50" r="${r}" fill="none" stroke="${color || css("--accent")}" stroke-width="10" stroke-linecap="round" stroke-dasharray="${(c * f).toFixed(1)} ${c.toFixed(1)}"/></svg>
+      <div class="val"><b class="num">${big}</b><span>${small}</span></div>`;
+  }
+  function markShape(k, x, y, r, fill, stroke) {
+    const sw = `stroke="${stroke}" stroke-width="2"`;
+    if (k === 0) return `<circle cx="${x}" cy="${y}" r="${r}" fill="${fill}" ${sw}/>`;
+    if (k === 1) return `<rect x="${x - r}" y="${y - r}" width="${2 * r}" height="${2 * r}" rx="1.5" fill="${fill}" ${sw}/>`;
+    if (k === 2) return `<path d="M${x},${y - r - 1} L${x + r + 1},${y} L${x},${y + r + 1} L${x - r - 1},${y}Z" fill="${fill}" ${sw}/>`;
+    return `<path d="M${x},${y - r - 1} L${x + r + 1},${y + r} L${x - r - 1},${y + r}Z" fill="${fill}" ${sw}/>`;
+  }
+  function sparkline(vals, color, cls = "spark", h = 30) {
+    const w = 120, pts = vals.map((v, i) => [i, v]).filter(p => p[1] != null);
+    if (pts.length < 2) return `<svg class="${cls}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true"></svg>`;
+    const n = Math.max(vals.length - 1, 1), X = i => 3 + (i / n) * (w - 6), Y = v => h - 3 - ((v - 1) / 9) * (h - 6);
+    const d = pts.map((p, k) => `${k ? "L" : "M"}${X(p[0]).toFixed(1)},${Y(p[1]).toFixed(1)}`).join("");
+    const l = pts[pts.length - 1];
+    return `<svg class="${cls}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true"><path d="${d}" fill="none" stroke="${color}" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/><circle cx="${X(l[0])}" cy="${Y(l[1])}" r="2.6" fill="${color}"/></svg>`;
+  }
+  function radar(el, cur, prev) {
+    const S = 300, c = S / 2, R = 110, n = 4, ang = i => -Math.PI / 2 + i * 2 * Math.PI / n;
+    const pt = (i, v) => [c + Math.cos(ang(i)) * R * v / 10, c + Math.sin(ang(i)) * R * v / 10];
+    const ink3 = css("--fg-3"), line = css("--line"), fg2 = css("--fg-2"), acc = css("--accent"), surf = css("--surface");
+    let s = `<svg viewBox="-80 -6 ${S + 160} ${S + 12}" role="img" aria-label="Balans per pilaar">`;
+    [2, 4, 6, 8, 10].forEach(v => { s += `<polygon points="${PILLARS.map((_, i) => pt(i, v).join(",")).join(" ")}" fill="none" stroke="${line}" stroke-width="1"/>`; });
+    PILLARS.forEach((_, i) => { const [x, y] = pt(i, 10); s += `<line x1="${c}" y1="${c}" x2="${x}" y2="${y}" stroke="${line}"/>`; });
+    if (prev && prev.every(v => v != null)) s += `<polygon points="${prev.map((v, i) => pt(i, v).join(",")).join(" ")}" fill="none" stroke="${ink3}" stroke-width="1.5" stroke-dasharray="4 4"/>`;
+    if (cur.every(v => v != null)) s += `<polygon points="${cur.map((v, i) => pt(i, v).join(",")).join(" ")}" fill="${acc}" fill-opacity=".16" stroke="${acc}" stroke-width="2" stroke-linejoin="round"/>`;
+    cur.forEach((v, i) => { if (v == null) return; const [x, y] = pt(i, v); s += markShape(i, x, y, 4.5, pc(PILLARS[i].id), surf); });
+    PILLARS.forEach((p, i) => {
+      const [x, y] = pt(i, 11.6); const anchor = i === 1 ? "start" : i === 3 ? "end" : "middle";
+      const dx = i === 1 ? -14 : i === 3 ? 14 : 0;
+      s += `<text x="${x + dx}" y="${y + (i === 0 ? -2 : i === 2 ? 10 : 4)}" text-anchor="${anchor}" font-size="13" font-weight="600" fill="${fg2}">${p.name} ${fmt(cur[i])}</text>`;
+    });
+    el.innerHTML = s + `</svg>`;
+  }
+  function lineChart(box, rows, labels, opts = {}) {
+    box.innerHTML = "";
+    const W = Math.max(box.clientWidth, 280), H = opts.h || 230, m = { l: 26, r: 92, t: 10, b: 26 };
+    const iw = W - m.l - m.r, ih = H - m.t - m.b, n = labels.length;
+    const X = i => m.l + (n <= 1 ? iw / 2 : (i / (n - 1)) * iw), Y = v => m.t + ih - (v / 10) * ih;
+    const ink3 = css("--fg-3"), line = css("--line"), surf = css("--surface");
+    let s = `<svg viewBox="0 0 ${W} ${H}" height="${H}" role="img" aria-label="${esc(opts.aria || "Trendgrafiek")}">`;
+    [0, 2, 4, 6, 8, 10].forEach(t => { s += `<line x1="${m.l}" x2="${m.l + iw}" y1="${Y(t)}" y2="${Y(t)}" stroke="${line}"/><text x="${m.l - 8}" y="${Y(t) + 4}" text-anchor="end" font-size="11" fill="${ink3}">${t}</text>`; });
+    const every = Math.ceil(n / Math.max(2, Math.floor(iw / 46)));
+    labels.forEach((lab, i) => { if (i % every === 0 || i === n - 1) s += `<text x="${X(i)}" y="${H - 6}" text-anchor="middle" font-size="11" fill="${ink3}">${esc(lab)}</text>`; });
+    const ends = [];
+    rows.forEach((r, k) => {
+      const pts = r.vals.map((v, i) => [i, v]).filter(p => p[1] != null); if (!pts.length) return;
+      const d = pts.map((p, j) => `${j ? "L" : "M"}${X(p[0]).toFixed(1)},${Y(p[1]).toFixed(1)}`).join("");
+      s += `<path d="${d}" fill="none" stroke="${r.color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" ${opts.dashed ? 'stroke-dasharray="5 4"' : ""}/>`;
+      const l = pts[pts.length - 1]; s += markShape(k, X(l[0]), Y(l[1]), 4, r.color, surf);
+      ends.push({ y: Y(l[1]), name: r.name, val: l[1] });
+    });
+    ends.sort((a, b) => a.y - b.y);
+    for (let i = 1; i < ends.length; i++) if (ends[i].y - ends[i - 1].y < 14) ends[i].y = ends[i - 1].y + 14;
+    ends.forEach(e => { s += `<text x="${m.l + iw + 10}" y="${e.y + 4}" font-size="11.5" fill="${css("--fg-2")}">${esc(e.name)}${opts.dashed ? "" : " " + fmt(e.val)}</text>`; });
+    s += `<line class="xh" x1="0" x2="0" y1="${m.t}" y2="${m.t + ih}" stroke="${ink3}" visibility="hidden"/><rect class="hit" x="${m.l}" y="${m.t}" width="${iw}" height="${ih}" fill="transparent"/></svg>`;
+    box.innerHTML = s;
+    if (opts.noHover) return;
+    const svg = box.querySelector("svg"), xh = svg.querySelector(".xh"), hit = svg.querySelector(".hit");
+    const tip = document.createElement("div"); tip.className = "tip"; tip.hidden = true; box.appendChild(tip);
+    const move = ev => {
+      const rect = svg.getBoundingClientRect(), px = (ev.clientX - rect.left) * (W / rect.width);
+      const i = Math.max(0, Math.min(n - 1, Math.round(((px - m.l) / iw) * (n - 1))));
+      xh.setAttribute("x1", X(i)); xh.setAttribute("x2", X(i)); xh.setAttribute("visibility", "visible");
+      tip.innerHTML = `<div class="label">${esc(opts.tipLabels ? opts.tipLabels[i] : labels[i])}</div>` + rows.map(r => `<div class="r"><span><i class="dot" style="background:${r.color}"></i>${esc(r.name)}</span><span class="num">${fmt(r.vals[i])}</span></div>`).join("");
+      tip.hidden = false;
+      const left = (X(i) / W) * rect.width, tw = tip.offsetWidth;
+      tip.style.left = (left + 12 + tw > rect.width ? Math.max(0, left - tw - 12) : left + 12) + "px"; tip.style.top = "0px";
+    };
+    hit.addEventListener("pointermove", move); hit.addEventListener("pointerdown", move);
+    hit.addEventListener("pointerleave", () => { tip.hidden = true; xh.setAttribute("visibility", "hidden"); });
+  }
+
+  // ---------- UI state ----------
+  const ui = { metric: "g", range: "12", openPillar: null, week: nowWeek, month: weekMonth(nowWeek), draft: null, openTask: null, justDone: null };
+  try { const p = JSON.parse(localStorage.getItem(KEY + "-ui")); if (p) { ui.metric = p.metric || ui.metric; ui.range = p.range || ui.range; } } catch {}
+  const saveUi = () => { try { localStorage.setItem(KEY + "-ui", JSON.stringify({ metric: ui.metric, range: ui.range })); } catch {} };
+
+  // ---------- Overzicht ----------
+  function renderFocusSummary() {
+    const open = state.tasks.filter(t => !t.done), now = open.filter(t => t.now);
+    const weekAgo = Date.now() - 7 * 864e5;
+    const doneWeek = state.tasks.filter(t => t.done && t.doneAt && new Date(t.doneAt) > weekAgo).length;
+    $("focusSummary").innerHTML = `
+      <div class="chart-head"><h2>Focus</h2><a class="small" href="#focus" style="color:var(--accent);font-weight:600">Naar focuslijst</a></div>
+      ${now.length ? `<div class="notes">${now.slice(0, 5).map(t => {
+        const st = t.steps || [], d = st.filter(x => x.done).length;
+        return `<div class="note" style="grid-template-columns:minmax(0,1fr) auto;align-items:center"><span style="font-weight:600;overflow-wrap:anywhere">${esc(t.title)}</span>${chip(t.pillar)}${st.length ? `<span class="small muted">${d} van ${st.length} stappen gedaan</span>` : ""}</div>`;
+      }).join("")}</div>` : `<p class="small muted">Niets op je lijst voor nu.</p>`}
+      <p class="small muted">${doneWeek ? `${doneWeek} ding${doneWeek === 1 ? "" : "en"} afgerond deze week. ` : ""}${open.length - now.length ? `${open.length - now.length} voor later.` : ""}</p>`;
+  }
+  function renderOverview() {
+    const S = series();
+    renderFocusSummary();
+    $("emptyBox").hidden = S.length > 0; $("dashBox").hidden = S.length === 0;
+    const latest = S[S.length - 1];
+    const next = latest?.next?.trim();
+    $("focusBand").hidden = !next; $("focusText").textContent = next || "";
+    if (!S.length) { renderExample(); return; }
+    const prev = S.length > 1 ? S[S.length - 2] : null;
+
+    // total + radar
+    const cur = PILLARS.map(p => pillarBoth(latest, p.id));
+    const tot = avg(cur);
+    ring($("totalRing"), (tot || 0) / 10, fmt(tot), "van 10");
+    $("pillarList").innerHTML = `<span class="label">Score per pilaar</span>` + PILLARS.map((p, i) => {
+      const pv = prev ? pillarBoth(prev, p.id) : null, d = cur[i] != null && pv != null ? cur[i] - pv : null;
+      return `<div class="row">${chip(p.id)}<span class="num">${fmt(cur[i])}${d != null && Math.abs(d) >= 0.05 ? ` <span class="small delta ${d > 0 ? "up" : "down"}">${d > 0 ? "+" : "−"}${fmt(Math.abs(d))}</span>` : ""}</span></div>`;
+    }).join("");
+    radar($("radar"), cur, prev ? PILLARS.map(p => pillarBoth(prev, p.id)) : null);
+    $("balanceHint").textContent = `Gemiddelde van situatie en gevoel, week ${weekNum(latest.key)}.${prev ? ` De stippellijn is week ${weekNum(prev.key)}.` : ""}`;
+
+    // tiles
+    const view = ui.range === "12" ? S.slice(-12) : S;
+    $("tiles").innerHTML = PILLARS.map(p => {
+      const sv = pillarVal(latest, p.id, "s"), gv = pillarVal(latest, p.id, "g");
+      const dirs = p.items.map(i => latest.scores?.[i.id]?.r).filter(Boolean), cnt = { up: 0, flat: 0, down: 0 }; dirs.forEach(d => cnt[d]++);
+      return `<button type="button" class="tile" style="--pc:var(--p-${p.id})" data-p="${p.id}" aria-expanded="${ui.openPillar === p.id}">
+        <span class="name">${icon(p.id)}${p.name}</span>
+        <span class="scores">
+          <span><span class="big num">${fmt(sv)}<small>/10</small></span><br><span class="sub">Situatie</span></span>
+          <span><span class="big num">${fmt(gv)}<small>/10</small></span><br><span class="sub">Gevoel</span></span>
+        </span>
+        ${sparkline(view.map(c => pillarVal(c, p.id, ui.metric)), pc(p.id))}
+        <span class="dirs">${dirs.length ? `${cnt.up}× ↑ · ${cnt.flat}× → · ${cnt.down}× ↓` : "Geen richting ingevuld"}</span>
+      </button>`;
+    }).join("");
+    $("tiles").querySelectorAll(".tile").forEach(b => b.addEventListener("click", () => { ui.openPillar = ui.openPillar === b.dataset.p ? null : b.dataset.p; renderOverview(); }));
+
+    const dp = $("detailPanel");
+    if (ui.openPillar) {
+      const p = P(ui.openPillar), note = latest.notes?.[p.id];
+      dp.hidden = false;
+      dp.innerHTML = `<h3>${p.full}, week ${weekNum(latest.key)}</h3>
+        <div class="detail"><div class="row head"><span>Onderdeel</span><span>Sit.</span><span>Gev.</span><span>Rich.</span><span class="sp">${ui.metric === "g" ? "Gevoel" : "Situatie"}</span></div>
+        ${p.items.map(i => { const sc = latest.scores?.[i.id] || {};
+          return `<div class="row"><span>${esc(i.name)}</span><span class="num">${sc.s ?? "–"}</span><span class="num">${sc.g ?? "–"}</span><span>${ARROW[sc.r] || "–"}</span><span class="sp">${sparkline(view.map(c => itemVal(c, i.id, ui.metric)), pc(p.id), "", 22)}</span></div>`; }).join("")}
+        </div>${note ? `<p class="small muted" style="white-space:pre-wrap">${esc(note)}</p>` : ""}`;
+    } else dp.hidden = true;
+
+    const { neg, pos } = computeSignals();
+    let sg = neg.length ? "" : `<div class="signal pos"><span class="si">✓</span><span>Geen aanhoudende negatieve trends.${S.length < 4 ? ` Signalen worden zinvol vanaf vier check-ins (je hebt er nu ${S.length}).` : ""}</span></div>`;
+    neg.forEach(t => sg += `<div class="signal neg"><span class="si">!</span><span>${t}</span></div>`);
+    pos.slice(0, 3).forEach(t => sg += `<div class="signal pos"><span class="si">↗</span><span>${t}</span></div>`);
+    $("signals").innerHTML = sg;
+
+    document.querySelectorAll("#metricSeg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.v === ui.metric));
+    document.querySelectorAll("#rangeSeg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.v === ui.range));
+    $("legend").innerHTML = PILLARS.map(p => `<span><i class="dot" style="background:${pc(p.id)}"></i>${p.name}</span>`).join("");
+    const labels = view.map(c => ui.range === "all" && view.length > 16 ? MON3[weekMonday(c.key).getUTCMonth()] : `W${weekNum(c.key)}`);
+    lineChart($("mainChart"), PILLARS.map(p => ({ name: p.name, color: pc(p.id), vals: view.map(c => pillarVal(c, p.id, ui.metric)) })), labels,
+      { aria: `${ui.metric === "g" ? "Gevoel" : "Situatie"} per pilaar per week`, tipLabels: view.map(c => `Week ${weekNum(c.key)} · ${weekRange(c.key)}`) });
+
+    const withNotes = S.slice().reverse().filter(c => c.good || c.attn || c.next || Object.values(c.notes || {}).some(Boolean)).slice(0, 5);
+    $("notes").innerHTML = withNotes.length ? withNotes.map(c => {
+      const pn = PILLARS.filter(p => c.notes?.[p.id]).map(p => `<p class="small"><b>${p.name}:</b> ${esc(c.notes[p.id])}</p>`).join("");
+      return `<div class="note"><span class="label">Week ${weekNum(c.key)} · ${weekRange(c.key)}</span>
+        ${c.good ? `<p class="small"><b>Gaat goed:</b> ${esc(c.good)}</p>` : ""}${c.attn ? `<p class="small"><b>Vraagt aandacht:</b> ${esc(c.attn)}</p>` : ""}${pn}
+        ${c.next ? `<p class="small muted">Eerstvolgende stap: ${esc(c.next)}</p>` : ""}</div>`;
+    }).join("") : `<p class="muted small">Nog geen notities.</p>`;
+  }
+  function renderExample() {
+    const ex = [[6,6,5,6,7,7],[4,5,5,6,6,7],[7,6,6,5,5,6],[5,5,6,6,6,7]];
+    lineChart($("exampleChart"), PILLARS.map((p, k) => ({ name: p.name, color: pc(p.id), vals: ex[k] })), ["W1","W2","W3","W4","W5","W6"], { h: 170, dashed: true, noHover: true, aria: "Voorbeeldgrafiek, geen echte scores" });
+  }
+
+  // ---------- Focus ----------
+  function renderFocus() {
+    $("newPillar").innerHTML = PILLARS.map(p => `<option value="${p.id}">${p.full}</option>`).join("");
+    if (ui.newPillar) $("newPillar").value = ui.newPillar;
+    const nowT = state.tasks.filter(t => !t.done && t.now), later = state.tasks.filter(t => !t.done && !t.now);
+    const done = state.tasks.filter(t => t.done).sort((a, b) => (b.doneAt || "").localeCompare(a.doneAt || ""));
+    // calm meter: share of "now" work that is done, steps count as partial progress
+    const unit = t => { const st = t.steps || []; return t.done ? 1 : st.length ? st.filter(x => x.done).length / (st.length + 1) : 0; };
+    const recentDone = done.filter(t => t.now !== false && Date.now() - new Date(t.doneAt) < 30 * 864e5);
+    const pool = [...nowT, ...recentDone], frac = pool.length ? pool.reduce((s, t) => s + unit(t), 0) / pool.length : 1;
+    const doneN = recentDone.length, allN = nowT.length + doneN;
+    ring($("calmRing"), frac, allN ? `${doneN}/${allN}` : "✓", "gedaan", css("--good"));
+    $("calmTitle").textContent = nowT.length ? `${nowT.length} ding${nowT.length === 1 ? "" : "en"} waar je nu mee bezig bent` : "Je lijst voor nu is leeg";
+    $("calmText").textContent = nowT.length
+      ? `${recentDone.length ? `${recentDone.length} afgerond de afgelopen maand. ` : ""}Elk punt dat je afvinkt, hoef je niet meer in je hoofd te houden.`
+      : "Alles wat moest, is gedaan. Geniet ervan, of kies iets van Later.";
+    $("tasksNow").innerHTML = nowT.length ? nowT.map(taskHtml).join("") : `<p class="emptyline">Geen taken voor nu.</p>`;
+    $("tasksLater").innerHTML = later.length ? later.map(taskHtml).join("") : `<p class="emptyline">Niets voor later. Zet het ster-icoon uit om iets hierheen te verplaatsen.</p>`;
+    $("tasksDone").innerHTML = done.length ? done.map(taskHtml).join("") : `<p class="emptyline">Nog niets afgevinkt.</p>`;
+    $("doneSummary").textContent = `Gedaan (${done.length})`;
+    ui.justDone = null;
+  }
+  function taskHtml(t) {
+    const st = t.steps || [], d = st.filter(x => x.done).length, open = ui.openTask === t.id;
+    const when = t.done && t.doneAt ? `Gedaan op ${new Date(t.doneAt).toLocaleDateString("nl-NL", { day: "numeric", month: "short" })}` : st.length ? `${d} van ${st.length} stappen` : "";
+    return `<div class="task ${t.done ? "done" : ""} ${ui.justDone === t.id ? "justdone" : ""}" data-t="${t.id}">
+      <div class="main">
+        <button type="button" class="tick" data-act="toggle" aria-label="${t.done ? "Markeer als niet gedaan" : "Markeer als gedaan"}"><span class="box">${t.done ? icon("tick", "ic") : ""}</span></button>
+        <div class="body" data-act="open" role="button" tabindex="0" aria-expanded="${open}"><span class="title">${esc(t.title)}</span><span class="meta">${chip(t.pillar)}${when ? `<span>${when}</span>` : ""}${t.note ? "<span>· notitie</span>" : ""}</span></div>
+        ${t.done ? "<span></span>" : `<button type="button" class="star" data-act="star" aria-pressed="${!!t.now}" aria-label="${t.now ? "Naar later" : "Nu mee bezig"}">${t.now ? "★" : "☆"}</button>`}
+      </div>
+      ${open ? `<div class="more">
+        <div class="steps">${st.map(s => `<div class="step ${s.done ? "done" : ""}" data-s="${s.id}"><input type="checkbox" data-act="step" ${s.done ? "checked" : ""} aria-label="Stap gedaan"><span>${esc(s.t)}</span><button type="button" class="xbtn" data-act="delstep" aria-label="Stap verwijderen">×</button></div>`).join("")}</div>
+        <div class="addrow"><input type="text" data-act="stepinput" placeholder="Volgende stap toevoegen" aria-label="Stap toevoegen" enterkeyhint="done"><button type="button" class="btn ghost" data-act="addstep">+</button></div>
+        <div class="field"><label class="small muted" for="note-${t.id}">Notitie</label><textarea id="note-${t.id}" data-act="note" style="min-height:52px">${esc(t.note || "")}</textarea></div>
+        <div class="actions">
+          <select data-act="pillar" aria-label="Pilaar">${PILLARS.map(p => `<option value="${p.id}" ${p.id === t.pillar ? "selected" : ""}>${p.full}</option>`).join("")}</select>
+          <button type="button" class="linkbtn" data-act="rename">Naam wijzigen</button>
+          <button type="button" class="linkbtn danger" data-act="delete">Verwijderen</button>
+        </div>
+        <div data-act="renamebox" hidden class="addrow"><input type="text" value="${esc(t.title)}" aria-label="Nieuwe naam"><button type="button" class="btn ghost" data-act="renamesave">Opslaan</button></div>
+        <div data-act="confirmbox" hidden class="actions"><span class="small">Echt verwijderen?</span><button type="button" class="btn ghost" data-act="delyes">Ja, verwijderen</button><button type="button" class="linkbtn" data-act="delno">Nee</button></div>
+      </div>` : ""}
+    </div>`;
+  }
+  function addTask(title, pillar, now) {
+    title = title.trim(); if (!title) return false;
+    state.tasks.unshift({ id: uid(), title, pillar, now, done: false, createdAt: new Date().toISOString(), steps: [], note: "" });
+    persist(); return true;
+  }
+  $("addTask").addEventListener("click", () => { if (addTask($("newTask").value, $("newPillar").value, $("newNow").checked)) { ui.newPillar = $("newPillar").value; $("newTask").value = ""; renderFocus(); } });
+  $("newTask").addEventListener("keydown", e => { if (e.key === "Enter") $("addTask").click(); });
+  $("newPillar").addEventListener("change", () => ui.newPillar = $("newPillar").value);
+  document.getElementById("view-focus").addEventListener("click", e => {
+    const a = e.target.closest("[data-act]"); if (!a) return;
+    const tEl = a.closest(".task"); if (!tEl) return;
+    const t = state.tasks.find(x => x.id === tEl.dataset.t); if (!t) return;
+    const act = a.dataset.act;
+    if (act === "toggle") { t.done = !t.done; t.doneAt = t.done ? new Date().toISOString() : null; if (t.done) { ui.justDone = t.id; if (ui.openTask === t.id) ui.openTask = null; } persist(); renderFocus(); }
+    else if (act === "open") { ui.openTask = ui.openTask === t.id ? null : t.id; renderFocus(); }
+    else if (act === "star") { t.now = !t.now; persist(); renderFocus(); }
+    else if (act === "step") { const s = t.steps.find(x => x.id === a.closest(".step").dataset.s); s.done = a.checked; persist(); renderFocus(); }
+    else if (act === "delstep") { t.steps = t.steps.filter(x => x.id !== a.closest(".step").dataset.s); persist(); renderFocus(); }
+    else if (act === "addstep") { const inp = tEl.querySelector('[data-act="stepinput"]'); const v = inp.value.trim(); if (v) { t.steps.push({ id: uid(), t: v, done: false }); persist(); renderFocus(); tEl.ownerDocument.querySelector(`.task[data-t="${t.id}"] [data-act="stepinput"]`)?.focus(); } }
+    else if (act === "rename") { tEl.querySelector('[data-act="renamebox"]').hidden = false; tEl.querySelector('[data-act="renamebox"] input').focus(); }
+    else if (act === "renamesave") { const v = tEl.querySelector('[data-act="renamebox"] input').value.trim(); if (v) { t.title = v; persist(); renderFocus(); } }
+    else if (act === "delete") { tEl.querySelector('[data-act="confirmbox"]').hidden = false; }
+    else if (act === "delno") { tEl.querySelector('[data-act="confirmbox"]').hidden = true; }
+    else if (act === "delyes") { state.tasks = state.tasks.filter(x => x.id !== t.id); persist(); renderFocus(); }
+  });
+  document.getElementById("view-focus").addEventListener("keydown", e => {
+    if (e.key === "Enter" && e.target.dataset.act === "stepinput") e.target.closest(".task").querySelector('[data-act="addstep"]').click();
+    if ((e.key === "Enter" || e.key === " ") && e.target.dataset.act === "open") { e.preventDefault(); e.target.click(); }
+  });
+  document.getElementById("view-focus").addEventListener("change", e => {
+    const tEl = e.target.closest(".task"); if (!tEl) return; const t = state.tasks.find(x => x.id === tEl.dataset.t); if (!t) return;
+    if (e.target.dataset.act === "note") { t.note = e.target.value; persist(); }
+    if (e.target.dataset.act === "pillar") { t.pillar = e.target.value; persist(); renderFocus(); }
+  });
+
+  // ---------- Check-in ----------
+  const prevBefore = key => { const ks = sortedKeys().filter(k => k < key); return ks.length ? state.checkins[ks[ks.length - 1]] : null; };
+  function startDraft() {
+    const ex = state.checkins[ui.week];
+    if (ex) { ui.draft = JSON.parse(JSON.stringify(ex)); ui.draft.notes ||= {}; ui.draftFrom = "existing"; return; }
+    const prev = prevBefore(ui.week);
+    ui.draft = { scores: {}, notes: {}, good: "", attn: "", next: "" };
+    if (prev) { ALL_ITEMS.forEach(i => { const s = prev.scores?.[i.id]; if (s) ui.draft.scores[i.id] = { s: s.s ?? null, g: s.g ?? null, r: null }; }); ui.draftFrom = "prev"; }
+    else ui.draftFrom = "new";
+  }
+  function renderWeekSel() {
+    const opts = [], d = new Date();
+    for (let k = 0; k < 10; k++) { const dd = new Date(d); dd.setDate(d.getDate() - 7 * k); opts.push(isoWeek(dd)); }
+    sortedKeys().forEach(k => { if (!opts.includes(k)) opts.push(k); });
+    opts.sort().reverse();
+    $("weekSel").innerHTML = opts.map(k => `<option value="${k}" ${k === ui.week ? "selected" : ""}>Week ${weekNum(k)} · ${weekRange(k)}${state.checkins[k] ? " ✓" : ""}</option>`).join("");
+  }
+  function renderCheckin() {
+    if (!ui.draft) startDraft();
+    renderWeekSel();
+    $("ciTitle").textContent = ui.week === nowWeek ? "Check-in deze week" : `Check-in week ${weekNum(ui.week)}`;
+    $("ciHint").textContent = ui.draftFrom === "existing" ? "Deze week is al ingevuld. Je kunt hem aanpassen."
+      : ui.draftFrom === "prev" ? "Je cijfers van vorige keer staan klaar. Pas alleen aan wat anders is, en kies per onderdeel de richting."
+      : "Score: hoe staat het ervoor. Gevoel: hoe rustig of tevreden je je erover voelt. Richting: wordt het beter, blijft het gelijk of wordt het slechter. Wat je niet invult, telt niet mee.";
+    $("pillarForms").innerHTML = PILLARS.map((p, pi) => `
+      <details class="pillar" style="--pc:var(--p-${p.id})" ${pi === 0 ? "open" : ""}>
+        <summary><span class="t">${icon(p.id)}<h3>${p.full}</h3></span><span class="prog" id="prog-${p.id}"></span></summary>
+        <div class="pillar-body">
+          ${p.items.map(i => `<div class="item" data-i="${i.id}">
+              <div class="ih"><b>${esc(i.name)}</b><span class="small muted">${esc(i.hint)}</span></div>
+              ${["s", "g"].map(m => `<div class="sl" data-m="${m}"><span>${m === "s" ? "Score" : "Gevoel"}</span><input type="range" min="1" max="10" step="1" id="r-${i.id}-${m}" aria-label="${esc(i.name)} ${m === "s" ? "score" : "gevoel"}"><output for="r-${i.id}-${m}"></output></div>`).join("")}
+              <div class="dirrow"><span>Richting</span><div class="dirbtns">${DIRS.map(d => `<button type="button" data-r="${d.v}">${d.t}</button>`).join("")}</div></div>
+            </div>`).join("")}
+          <div class="field"><label for="n-${p.id}">Notities, wat speelt er?</label><textarea id="n-${p.id}" data-note="${p.id}"></textarea></div>
+        </div>
+      </details>`).join("");
+    document.querySelectorAll("#pillarForms .item").forEach(el => {
+      const id = el.dataset.i, sc = ui.draft.scores[id] || {};
+      el.querySelectorAll(".sl").forEach(sl => {
+        const m = sl.dataset.m, inp = sl.querySelector("input"), out = sl.querySelector("output"), v = sc[m], set = typeof v === "number";
+        inp.value = set ? v : 5; out.textContent = set ? v : "–"; sl.classList.toggle("unset", !set);
+        const commit = () => { const s = ui.draft.scores[id] || (ui.draft.scores[id] = { s: null, g: null, r: null }); s[m] = Number(inp.value); out.textContent = inp.value; sl.classList.remove("unset"); updateProgress(); dirty(); };
+        inp.addEventListener("input", commit);
+        inp.addEventListener("pointerup", () => { if (sl.classList.contains("unset")) commit(); });
+      });
+      el.querySelectorAll(".dirbtns button").forEach(b => {
+        b.setAttribute("aria-pressed", sc.r === b.dataset.r);
+        b.addEventListener("click", () => {
+          const s = ui.draft.scores[id] || (ui.draft.scores[id] = { s: null, g: null, r: null });
+          s.r = s.r === b.dataset.r ? null : b.dataset.r;
+          el.querySelectorAll(".dirbtns button").forEach(x => x.setAttribute("aria-pressed", s.r === x.dataset.r)); updateProgress(); dirty();
+        });
+      });
+    });
+    document.querySelectorAll("#pillarForms textarea[data-note]").forEach(t => { t.value = ui.draft.notes?.[t.dataset.note] || ""; t.addEventListener("input", () => { ui.draft.notes[t.dataset.note] = t.value; dirty(); }); });
+    $("rGood").value = ui.draft.good || ""; $("rAttn").value = ui.draft.attn || ""; $("rNext").value = ui.draft.next || "";
+    $("rNextTask").checked = !ui.draft.nextTaskId;
+    updateProgress(); $("saveStatus").textContent = "";
+  }
+  function updateProgress() {
+    PILLARS.forEach(p => {
+      const done = p.items.filter(i => { const s = ui.draft.scores[i.id]; return s && s.s != null && s.g != null && s.r; }).length;
+      const el = $("prog-" + p.id); if (el) el.textContent = `${done} van 4`;
+    });
+  }
+  const dirty = () => { $("saveStatus").textContent = "Nog niet bewaard"; };
+  [["rGood", "good"], ["rAttn", "attn"], ["rNext", "next"]].forEach(([id, k]) => $(id).addEventListener("input", () => { ui.draft[k] = $(id).value; dirty(); }));
+  $("weekSel").addEventListener("change", () => { ui.week = $("weekSel").value; ui.draft = null; renderCheckin(); });
+  $("saveBtn").addEventListener("click", () => {
+    const d = ui.draft;
+    const clean = { scores: {}, notes: {}, good: (d.good || "").trim(), attn: (d.attn || "").trim(), next: (d.next || "").trim(), nextTaskId: d.nextTaskId || null, updatedAt: new Date().toISOString() };
+    Object.entries(d.scores).forEach(([k, v]) => { if (v && (v.s != null || v.g != null || v.r)) clean.scores[k] = { s: v.s ?? null, g: v.g ?? null, r: v.r ?? null }; });
+    Object.entries(d.notes || {}).forEach(([k, v]) => { if (v && v.trim()) clean.notes[k] = v.trim(); });
+    if (!Object.keys(clean.scores).length && !clean.good && !clean.attn && !clean.next) { $("saveStatus").textContent = "Vul minstens één onderdeel of een reflectie in."; return; }
+    let msg = "";
+    if (clean.next && $("rNextTask").checked && !clean.nextTaskId) {
+      // link the step to the pillar with the lowest feeling this week
+      const low = PILLARS.map(p => ({ id: p.id, v: avg(p.items.map(i => clean.scores[i.id]?.g)) })).filter(x => x.v != null).sort((a, b) => a.v - b.v)[0];
+      addTask(clean.next, low ? low.id : "gezondheid", true); clean.nextTaskId = state.tasks[0].id; d.nextTaskId = clean.nextTaskId;
+      msg = " Je stap staat op je focuslijst.";
+    }
+    state.checkins[ui.week] = clean;
+    if (persist()) { ui.draftFrom = "existing"; $("saveStatus").textContent = `Bewaard.${msg}`; renderWeekSel(); $("rNextTask").checked = !clean.nextTaskId; }
+    else $("saveStatus").textContent = "Bewaren lukte niet. Open de app vanaf je beginscherm en probeer het opnieuw.";
+  });
+
+  // ---------- Terugblik ----------
+  const monthLabel = mk => { const [y, m] = mk.split("-").map(Number); return `${MONTHS[m - 1]} ${y}`; };
+  const prevMonth = mk => { let [y, m] = mk.split("-").map(Number); m--; if (!m) { m = 12; y--; } return `${y}-${String(m).padStart(2, "0")}`; };
+  const monthCheckins = mk => series().filter(c => weekMonth(c.key) === mk);
+  function renderReview() {
+    const months = new Set([weekMonth(nowWeek)]); sortedKeys().forEach(k => months.add(weekMonth(k))); Object.keys(state.reflections).forEach(k => months.add(k));
+    $("monthSel").innerHTML = [...months].sort().reverse().map(k => `<option value="${k}" ${k === ui.month ? "selected" : ""}>${monthLabel(k)}${state.reflections[k] ? " ✓" : ""}</option>`).join("");
+    const cur = monthCheckins(ui.month), prv = monthCheckins(prevMonth(ui.month));
+    $("cmpHint").textContent = `${cur.length} check-in${cur.length === 1 ? "" : "s"} in ${monthLabel(ui.month)}, ${prv.length} in ${monthLabel(prevMonth(ui.month))}. Gemiddelden per pilaar.`;
+    const cell = (a, b) => { if (a == null) return `<span class="num muted">–</span>`; const d = b == null ? null : a - b;
+      return `<span class="num">${fmt(a)}${d == null || Math.abs(d) < 0.05 ? "" : ` <span class="delta ${d > 0 ? "up" : "down"} small">${d > 0 ? "+" : "−"}${fmt(Math.abs(d))}</span>`}</span>`; };
+    $("cmp").innerHTML = `<div class="row label"><span>Pilaar</span><span>Score</span><span>Gevoel</span></div>` + PILLARS.map(p => {
+      const a = m => avg(cur.map(c => pillarVal(c, p.id, m))), b = m => avg(prv.map(c => pillarVal(c, p.id, m)));
+      return `<div class="row"><span>${chip(p.id)}</span>${cell(a("s"), b("s"))}${cell(a("g"), b("g"))}</div>`;
+    }).join("");
+    const mv = ALL_ITEMS.map(i => { const a = avg(cur.map(c => itemVal(c, i.id, "g"))), b = avg(prv.map(c => itemVal(c, i.id, "g"))); return { i, d: a != null && b != null ? a - b : null, a, b }; })
+      .filter(x => x.d != null && Math.abs(x.d) >= 1).sort((x, y) => Math.abs(y.d) - Math.abs(x.d)).slice(0, 4);
+    $("moverPanel").hidden = !mv.length;
+    $("movers").innerHTML = mv.map(x => `<div class="signal ${x.d > 0 ? "pos" : "neg"}"><span class="si">${x.d > 0 ? "↗" : "↘"}</span><span><b>${esc(x.i.name)}</b>: gemiddeld ${fmt(x.b)} → ${fmt(x.a)}</span></div>`).join("");
+    const doneM = state.tasks.filter(t => t.done && t.doneAt && monthOfDate(t.doneAt) === ui.month);
+    $("monthDone").textContent = doneM.length ? `Afgerond in ${monthLabel(ui.month)}: ${doneM.map(t => t.title).join(", ")}.` : "";
+    const r = state.reflections[ui.month] || {};
+    ["q1", "q2", "q3", "q4"].forEach(q => $(q).value = r[q] || "");
+    $("q4wrap").hidden = Number(ui.month.split("-")[1]) % 3 !== 0;
+    $("reflStatus").textContent = r.updatedAt ? `Laatst bewaard op ${new Date(r.updatedAt).toLocaleDateString("nl-NL", { day: "numeric", month: "long" })}.` : "";
+  }
+  $("monthSel").addEventListener("change", () => { ui.month = $("monthSel").value; renderReview(); });
+  ["q1", "q2", "q3", "q4"].forEach(q => $(q).addEventListener("input", () => { $("reflStatus").textContent = "Nog niet bewaard"; }));
+  $("saveRefl").addEventListener("click", () => {
+    state.reflections[ui.month] = { q1: $("q1").value.trim(), q2: $("q2").value.trim(), q3: $("q3").value.trim(), q4: $("q4").value.trim(), updatedAt: new Date().toISOString() };
+    $("reflStatus").textContent = persist() ? "Bewaard." : "Bewaren lukte niet.";
+  });
+
+  // ---------- backup ----------
+  $("exportBtn").addEventListener("click", async () => {
+    const name = `levensbalans-${new Date().toISOString().slice(0, 10)}.json`;
+    const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+    try {
+      const file = new File([blob], name, { type: "application/json" });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: "Levensbalans back-up" }); $("backupStatus").textContent = "Back-up gedeeld."; return; }
+    } catch (e) { if (e && e.name === "AbortError") return; }
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    $("backupStatus").textContent = `Back-up opgeslagen als ${name}.`;
+  });
+  $("importFile").addEventListener("change", async () => {
+    const f = $("importFile").files[0]; if (!f) return;
+    try {
+      const d = JSON.parse(await f.text());
+      if (!d || typeof d !== "object" || !d.checkins || !Array.isArray(d.tasks)) throw new Error();
+      state = { checkins: {}, reflections: {}, tasks: [], ...d, seeded: true }; persist(); ui.draft = null;
+      $("backupStatus").textContent = `Teruggezet: ${Object.keys(state.checkins).length} check-ins en ${state.tasks.length} taken.`;
+    } catch { $("backupStatus").textContent = "Dit bestand is geen Levensbalans-back-up."; }
+    $("importFile").value = "";
+  });
+
+  // ---------- routing ----------
+  $("metricSeg").addEventListener("click", e => { const b = e.target.closest("button"); if (b) { ui.metric = b.dataset.v; saveUi(); renderOverview(); } });
+  $("rangeSeg").addEventListener("click", e => { const b = e.target.closest("button"); if (b) { ui.range = b.dataset.v; saveUi(); renderOverview(); } });
+  const VIEWS = ["overzicht", "focus", "checkin", "terugblik"];
+  function route() {
+    const v = VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "overzicht";
+    VIEWS.forEach(x => { $("view-" + x).hidden = x !== v; const t = $("tab-" + x); if (x === v) t.setAttribute("aria-current", "page"); else t.removeAttribute("aria-current"); });
+    if (v === "overzicht") renderOverview();
+    if (v === "focus") renderFocus();
+    if (v === "checkin") renderCheckin();
+    if (v === "terugblik") renderReview();
+  }
+  window.addEventListener("hashchange", () => { route(); window.scrollTo(0, 0); });
+  let rt; window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => { if (!$("view-overzicht").hidden) renderOverview(); }, 150); });
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", () => route());
+  window.addEventListener("storage", e => { if (e.key === KEY) { load(); route(); } });
+
+  $("weekline").textContent = `Week ${weekNum(nowWeek)} · ${weekRange(nowWeek)}`;
+  load(); showNotice(); route();
+  if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
+})();
+</script>
+</body>
+</html>
