@@ -2,7 +2,7 @@
 
 Een persoonlijke app voor de telefoon (PWA) om de komende periode rustig bij te houden hoe het gaat:
 
-- **Wekelijkse check-in** over vier pilaren met elk vier onderdelen: Relatie & verbinding, Wonen & leefomgeving, Werk & financiën en Gezondheid. Per onderdeel geef je een score (1–10), je gevoel (1–10) en de richting (↑ → ↓), plus notities.
+- **Wekelijkse check-in** over vier pilaren met elk vier onderdelen: Relatie & verbinding, Wonen & leefomgeving, Werk & financiën en Gezondheid. Per onderdeel beantwoord je één scherpe vraag met een cijfer (1–10) en kies je de richting (↑ → ↓), plus notities.
 - **Focuslijst** met taken die bij een pilaar horen, met stappen. Afvinken laat zien wat je niet meer in je hoofd hoeft te houden.
 - **Overzicht** met totaalscore, radar, trends per week en signalen bij een aanhoudende daling. Een lage score alleen geeft geen signaal.
 - **Maandelijkse terugblik**, met elk kwartaal een extra vraag.

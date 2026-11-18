@@ -143,11 +143,11 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 .tile svg.spark { width: 100%; height: 30px; display: block; }
 .dirs { font-size: 0.78rem; color: var(--fg-2); }
 
-.detail .row { display: grid; grid-template-columns: minmax(0,1fr) 34px 34px 24px 64px; gap: 8px; align-items: center; padding: 9px 0; border-top: 1px solid var(--line); font-size: 0.9rem; }
+.detail .row { display: grid; grid-template-columns: minmax(0,1fr) 40px 30px 64px; gap: 8px; align-items: center; padding: 9px 0; border-top: 1px solid var(--line); font-size: 0.9rem; }
 .detail .row:first-child { border-top: 0; }
 .detail .row svg { width: 64px; height: 22px; }
 .detail .head { font-size: 0.68rem; color: var(--fg-3); text-transform: uppercase; letter-spacing: .06em; }
-@media (max-width: 420px) { .detail .row { grid-template-columns: minmax(0,1fr) 34px 34px 24px; } .detail .row .sp { display: none; } }
+@media (max-width: 420px) { .detail .row { grid-template-columns: minmax(0,1fr) 40px 30px; } .detail .row .sp { display: none; } }
 
 /* signals */
 .signal { display: grid; grid-template-columns: 20px minmax(0,1fr); gap: 10px; align-items: start; padding: 10px 12px; border-radius: 12px; }
@@ -202,7 +202,7 @@ details.pillar[open] > summary::after { content: "–"; }
 .pillar-body { padding: 4px 18px 18px; display: grid; gap: 14px; }
 .item { display: grid; gap: 8px; padding-top: 14px; border-top: 1px solid var(--line); }
 .item:first-child { border-top: 0; }
-.item .ih { display: grid; gap: 0; }
+.item .ih { display: grid; gap: 2px; }
 .item .ih b { font-weight: 600; }
 .sl { display: grid; grid-template-columns: 62px minmax(0,1fr) 30px; gap: 10px; align-items: center; font-size: 0.85rem; color: var(--fg-2); }
 .sl output { font-weight: 600; color: var(--fg); text-align: right; font-variant-numeric: tabular-nums; }
@@ -328,7 +328,6 @@ details.donelist > summary { cursor: pointer; padding: 6px 2px; color: var(--fg-
         <div class="chart-head">
           <h2>Ontwikkeling</h2>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <div class="seg" id="metricSeg"><button type="button" data-v="s">Situatie</button><button type="button" data-v="g">Gevoel</button></div>
             <div class="seg" id="rangeSeg"><button type="button" data-v="12">12 weken</button><button type="button" data-v="all">Alles</button></div>
           </div>
         </div>
@@ -416,7 +415,7 @@ details.donelist > summary { cursor: pointer; padding: 6px 2px; color: var(--fg-
       <div class="cmp" id="cmp"></div>
     </div>
     <div class="panel" id="moverPanel" hidden>
-      <h3>Grootste verschuivingen in gevoel</h3>
+      <h3>Grootste verschuivingen</h3>
       <div class="signals" id="movers"></div>
     </div>
     <div class="panel">
@@ -456,25 +455,25 @@ details.donelist > summary { cursor: pointer; padding: 6px 2px; color: var(--fg-
 (() => {
   const PILLARS = [
     { id: "relatie", name: "Relatie", full: "Relatie & verbinding", items: [
-      { id: "kinderen", name: "Kinderen", hint: "Tijd, contact en band met de kinderen" },
-      { id: "coouder", name: "Co-ouderschap", hint: "Samenwerking en afspraken met Samara" },
-      { id: "scheiding", name: "Afwikkeling scheiding", hint: "Mediation, verdeling, papierwerk" },
-      { id: "naasten", name: "Familie & vrienden", hint: "Steun en mensen om je heen" } ] },
+      { id: "kinderen", name: "Kinderen", hint: "Tijd, contact en band met de kinderen", q: "Hoe goed is mijn band met de kinderen nu?" },
+      { id: "coouder", name: "Co-ouderschap", hint: "Samenwerking en afspraken met Samara", q: "Hoe soepel lopen de afspraken met Samara?" },
+      { id: "scheiding", name: "Afwikkeling scheiding", hint: "Mediation, verdeling, papierwerk", q: "Hoeveel grip heb ik op de afwikkeling van de scheiding?" },
+      { id: "naasten", name: "Familie & vrienden", hint: "Steun en mensen om je heen", q: "Hoe gesteund voel ik me door familie en vrienden?" } ] },
     { id: "wonen", name: "Wonen", full: "Wonen & leefomgeving", items: [
-      { id: "zekerheid", name: "Woonzekerheid", hint: "Nieuwe woning, huur of koop" },
-      { id: "rusthuis", name: "Rust in huis", hint: "Spanning in de huidige woonsituatie" },
-      { id: "thuisgevoel", name: "Thuisgevoel & comfort", hint: "Ook voor de kinderen" },
-      { id: "omgeving", name: "Fijne woonomgeving", hint: "Soest, buurt, natuur, voorzieningen" } ] },
+      { id: "zekerheid", name: "Woonzekerheid", hint: "Nieuwe woning, huur of koop", q: "Hoe zeker ben ik van mijn volgende woning?" },
+      { id: "rusthuis", name: "Rust in huis", hint: "Spanning in de huidige woonsituatie", q: "Hoeveel rust heb ik thuis?" },
+      { id: "thuisgevoel", name: "Thuisgevoel & comfort", hint: "Ook voor de kinderen", q: "Hoe thuis voelen de kinderen en ik ons waar we nu wonen?" },
+      { id: "omgeving", name: "Fijne woonomgeving", hint: "Soest, buurt, natuur, voorzieningen", q: "Hoe prettig vind ik mijn woonomgeving?" } ] },
     { id: "werk", name: "Werk", full: "Werk & financiën", items: [
-      { id: "plezier", name: "Werkplezier & uitdaging", hint: "Energie uit je werk" },
-      { id: "opdrachten", name: "Opdrachten & pipeline", hint: "Freelanceklussen, nieuwe klanten" },
-      { id: "inkomen", name: "Inkomen & buffer", hint: "Stabiliteit, spaargeld, reserves" },
-      { id: "vrijheid", name: "Vrijheid & autonomie", hint: "Eigen regie over je tijd en keuzes" } ] },
+      { id: "plezier", name: "Werkplezier & uitdaging", hint: "Energie uit je werk", q: "Hoeveel energie geeft mijn werk me?" },
+      { id: "opdrachten", name: "Opdrachten & pipeline", hint: "Freelanceklussen, nieuwe klanten", q: "Hoe zeker is mijn werk voor de komende maanden?" },
+      { id: "inkomen", name: "Inkomen & buffer", hint: "Stabiliteit, spaargeld, reserves", q: "Hoeveel financiële rust heb ik?" },
+      { id: "vrijheid", name: "Vrijheid & autonomie", hint: "Eigen regie over je tijd en keuzes", q: "Hoeveel regie heb ik over mijn tijd en keuzes?" } ] },
     { id: "gezondheid", name: "Gezondheid", full: "Gezondheid", items: [
-      { id: "fysiek", name: "Fysieke gezondheid", hint: "Conditie, klachten, vitaliteit" },
-      { id: "mentaal", name: "Mentale rust", hint: "Stress, piekeren, veerkracht" },
-      { id: "slaap", name: "Energie & slaap", hint: "Rust, herstel, fit zijn" },
-      { id: "leefstijl", name: "Leefstijl & beweging", hint: "Voeding, sport, gewoontes" } ] },
+      { id: "fysiek", name: "Fysieke gezondheid", hint: "Conditie, klachten, vitaliteit", q: "Hoe fit voel ik me?" },
+      { id: "mentaal", name: "Mentale rust", hint: "Stress, piekeren, veerkracht", q: "Hoe rustig is het in mijn hoofd?" },
+      { id: "slaap", name: "Energie & slaap", hint: "Rust, herstel, fit zijn", q: "Hoe goed slaap en herstel ik?" },
+      { id: "leefstijl", name: "Leefstijl & beweging", hint: "Voeding, sport, gewoontes", q: "Hoe goed zorg ik voor mezelf met eten, bewegen en drinken?" } ] },
   ];
   const ALL_ITEMS = PILLARS.flatMap(p => p.items.map(i => ({ ...i, pillar: p.id })));
   const P = id => PILLARS.find(p => p.id === id);
@@ -546,9 +545,9 @@ details.donelist > summary { cursor: pointer; padding: 6px 2px; color: var(--fg-
   // ---------- derived ----------
   const sortedKeys = () => Object.keys(state.checkins).sort();
   const series = () => sortedKeys().map(k => ({ key: k, ...state.checkins[k] }));
-  const pillarVal = (ci, pid, m) => avg(P(pid).items.map(i => ci.scores?.[i.id]?.[m]));
-  const pillarBoth = (ci, pid) => avg(P(pid).items.flatMap(i => [ci.scores?.[i.id]?.s, ci.scores?.[i.id]?.g]));
-  const itemVal = (ci, iid, m) => { const v = ci.scores?.[iid]?.[m]; return typeof v === "number" ? v : null; };
+  // One number per item. Check-ins saved before this change held score and gevoel; those are averaged.
+  const itemVal = (ci, iid) => { const sc = ci.scores?.[iid]; if (!sc) return null; if (typeof sc.v === "number") return sc.v; return avg([sc.s, sc.g]); };
+  const pillarVal = (ci, pid) => avg(P(pid).items.map(i => itemVal(ci, i.id)));
 
   function slope(v) { const n = v.length, mx = (n - 1) / 2, my = v.reduce((a, b) => a + b, 0) / n; let a = 0, b = 0; v.forEach((y, x) => { a += (x - mx) * (y - my); b += (x - mx) ** 2; }); return b ? a / b : 0; }
   function trend(vals) {
@@ -560,19 +559,17 @@ details.donelist > summary { cursor: pointer; padding: 6px 2px; color: var(--fg-
     return 0;
   }
   function computeSignals() {
-    const S = series(), neg = [], pos = [], MN = { s: "situatie", g: "gevoel" };
+    const S = series(), neg = [], pos = [];
     ALL_ITEMS.forEach(it => {
       if (S.length >= 3 && S.slice(-3).every(c => c.scores?.[it.id]?.r === "down")) neg.push(`<b>${esc(it.name)}</b>: drie check-ins op rij geef je de richting ↓.`);
-      ["g", "s"].forEach(m => {
-        const vals = S.map(c => itemVal(c, it.id, m)), t = trend(vals), l = vals.slice(-4);
-        if (t === -1) neg.push(`<b>${esc(it.name)}</b>: ${MN[m]} daalt al vier weken, van ${l[0]} naar ${l[3]}.`);
-        if (t === 1) pos.push(`<b>${esc(it.name)}</b>: ${MN[m]} stijgt al vier weken, van ${l[0]} naar ${l[3]}.`);
-      });
+      const vals = S.map(c => itemVal(c, it.id)), t = trend(vals), l = vals.slice(-4);
+      if (t === -1) neg.push(`<b>${esc(it.name)}</b>: daalt al vier weken, van ${fmt(l[0])} naar ${fmt(l[3])}.`);
+      if (t === 1) pos.push(`<b>${esc(it.name)}</b>: stijgt al vier weken, van ${fmt(l[0])} naar ${fmt(l[3])}.`);
     });
     PILLARS.forEach(p => {
-      const v = S.map(c => pillarVal(c, p.id, "g")).slice(-4);
+      const v = S.map(c => pillarVal(c, p.id)).slice(-4);
       if (v.length === 4 && v.every(x => x != null) && v[3] - v[0] <= -1.5 && slope(v) <= -0.4)
-        neg.push(`<b>${p.full}</b> als geheel: je gevoel zakt al vier weken (gemiddeld ${fmt(v[0])} → ${fmt(v[3])}).`);
+        neg.push(`<b>${p.full}</b> als geheel: zakt al vier weken (gemiddeld ${fmt(v[0])} → ${fmt(v[3])}).`);
     });
     return { neg, pos };
   }
@@ -599,20 +596,20 @@ details.donelist > summary { cursor: pointer; padding: 6px 2px; color: var(--fg-
     const l = pts[pts.length - 1];
     return `<svg class="${cls}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true"><path d="${d}" fill="none" stroke="${color}" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/><circle cx="${X(l[0])}" cy="${Y(l[1])}" r="2.6" fill="${color}"/></svg>`;
   }
-  // One circle in four quarters; each quarter fills clockwise from 0 to 100%. Outer track = score, inner = gevoel.
+  // One circle in four quarters; each quarter fills clockwise from 0 to 100% (a 10).
   function quarters(el, ci, tot) {
-    const C = 110, gapDeg = 7, tracks = [{ r: 92, m: "s", o: 1 }, { r: 70, m: "g", o: 0.62 }], W = 17;
+    const C = 110, gapDeg = 7, tracks = [{ r: 86, o: 1 }], W = 26;
     const pt = (deg, r) => { const a = (deg - 90) * Math.PI / 180; return [C + Math.cos(a) * r, C + Math.sin(a) * r]; };
     const arcPath = (d0, d1, r) => { const [x0, y0] = pt(d0, r), [x1, y1] = pt(d1, r); return `M${x0.toFixed(2)},${y0.toFixed(2)} A${r},${r} 0 0 1 ${x1.toFixed(2)},${y1.toFixed(2)}`; };
-    let s = `<svg viewBox="0 0 ${2 * C} ${2 * C}" role="img" aria-label="Balans per pilaar: ${PILLARS.map(p => `${p.name} ${fmt(pillarBoth(ci, p.id))}`).join(", ")}">`;
+    let s = `<svg viewBox="0 0 ${2 * C} ${2 * C}" role="img" aria-label="Balans per pilaar: ${PILLARS.map(p => `${p.name} ${fmt(pillarVal(ci, p.id))}`).join(", ")}">`;
     PILLARS.forEach((p, i) => {
       const col = pc(p.id), d0 = i * 90 + gapDeg / 2, span = 90 - gapDeg;
       tracks.forEach(t => {
         s += `<path d="${arcPath(d0, d0 + span, t.r)}" fill="none" stroke="${col}" stroke-opacity=".16" stroke-width="${W}"/>`;
-        const v = pillarVal(ci, p.id, t.m);
+        const v = pillarVal(ci, p.id);
         if (v != null && v > 0) s += `<path d="${arcPath(d0, d0 + span * Math.min(v, 10) / 10, t.r)}" fill="none" stroke="${col}" stroke-opacity="${t.o}" stroke-width="${W}"/>`;
       });
-      const [ix, iy] = pt(i * 90 + 45, 46);
+      const [ix, iy] = pt(i * 90 + 45, 52);
       s += `<svg x="${ix - 9}" y="${iy - 9}" width="18" height="18" viewBox="0 0 24 24" style="color:${col}"><use href="#i-${p.id}"/></svg>`;
     });
     s += `<text x="${C}" y="${C + 9}" text-anchor="middle" font-family="Bricolage Grotesque, system-ui, sans-serif" font-size="26" font-weight="650" fill="${css("--fg")}">${fmt(tot)}</text>`;
@@ -703,28 +700,24 @@ details.donelist > summary { cursor: pointer; padding: 6px 2px; color: var(--fg-
     const prev = S.length > 1 ? S[S.length - 2] : null;
 
     // total + radar
-    const cur = PILLARS.map(p => pillarBoth(latest, p.id));
+    const cur = PILLARS.map(p => pillarVal(latest, p.id));
     const tot = avg(cur);
     quarters($("quarters"), latest, tot);
     $("pillarList").innerHTML = `<span class="label">Score per pilaar</span>` + PILLARS.map((p, i) => {
-      const pv = prev ? pillarBoth(prev, p.id) : null, d = cur[i] != null && pv != null ? cur[i] - pv : null;
-      const sv = pillarVal(latest, p.id, "s"), gv = pillarVal(latest, p.id, "g");
-      return `<div class="row"><span>${chip(p.id)}<span class="sub">Score ${fmt(sv)} · gevoel ${fmt(gv)}</span></span><span class="num">${fmt(cur[i])}${d != null && Math.abs(d) >= 0.05 ? ` <span class="small delta ${d > 0 ? "up" : "down"}">${d > 0 ? "+" : "−"}${fmt(Math.abs(d))}</span>` : ""}</span></div>`;
+      const pv = prev ? pillarVal(prev, p.id) : null, d = cur[i] != null && pv != null ? cur[i] - pv : null;
+      return `<div class="row"><span>${chip(p.id)}</span><span class="num">${fmt(cur[i])}${d != null && Math.abs(d) >= 0.05 ? ` <span class="small delta ${d > 0 ? "up" : "down"}">${d > 0 ? "+" : "−"}${fmt(Math.abs(d))}</span>` : ""}</span></div>`;
     }).join("");
-    $("balanceHint").textContent = `Elk kwart is een pilaar en is vol bij een 10. De buitenste ring is de score, de binnenste je gevoel. Week ${weekNum(latest.key)}${prev ? `, verschil met week ${weekNum(prev.key)}` : ""}.`;
+    $("balanceHint").textContent = `Elk kwart is een pilaar en is vol bij een 10. Week ${weekNum(latest.key)}${prev ? `, verschil met week ${weekNum(prev.key)}` : ""}.`;
 
     // tiles
     const view = ui.range === "12" ? S.slice(-12) : S;
     $("tiles").innerHTML = PILLARS.map(p => {
-      const sv = pillarVal(latest, p.id, "s"), gv = pillarVal(latest, p.id, "g");
+      const pv = pillarVal(latest, p.id);
       const dirs = p.items.map(i => latest.scores?.[i.id]?.r).filter(Boolean), cnt = { up: 0, flat: 0, down: 0 }; dirs.forEach(d => cnt[d]++);
       return `<button type="button" class="tile" style="--pc:var(--p-${p.id})" data-p="${p.id}" aria-expanded="${ui.openPillar === p.id}">
         <span class="name">${icon(p.id)}${p.name}</span>
-        <span class="scores">
-          <span><span class="big num">${fmt(sv)}<small>/10</small></span><br><span class="sub">Situatie</span></span>
-          <span><span class="big num">${fmt(gv)}<small>/10</small></span><br><span class="sub">Gevoel</span></span>
-        </span>
-        ${sparkline(view.map(c => pillarVal(c, p.id, ui.metric)), pc(p.id))}
+        <span class="big num">${fmt(pv)}<small>/10</small></span>
+        ${sparkline(view.map(c => pillarVal(c, p.id)), pc(p.id))}
         <span class="dirs">${dirs.length ? `${cnt.up}× ↑ · ${cnt.flat}× → · ${cnt.down}× ↓` : "Geen richting ingevuld"}</span>
       </button>`;
     }).join("");
@@ -735,9 +728,9 @@ details.donelist > summary { cursor: pointer; padding: 6px 2px; color: var(--fg-
       const p = P(ui.openPillar), note = latest.notes?.[p.id];
       dp.hidden = false;
       dp.innerHTML = `<h3>${p.full}, week ${weekNum(latest.key)}</h3>
-        <div class="detail"><div class="row head"><span>Onderdeel</span><span>Sit.</span><span>Gev.</span><span>Rich.</span><span class="sp">${ui.metric === "g" ? "Gevoel" : "Situatie"}</span></div>
+        <div class="detail"><div class="row head"><span>Onderdeel</span><span>Cijfer</span><span>Rich.</span><span class="sp">Verloop</span></div>
         ${p.items.map(i => { const sc = latest.scores?.[i.id] || {};
-          return `<div class="row"><span>${esc(i.name)}</span><span class="num">${sc.s ?? "–"}</span><span class="num">${sc.g ?? "–"}</span><span>${ARROW[sc.r] || "–"}</span><span class="sp">${sparkline(view.map(c => itemVal(c, i.id, ui.metric)), pc(p.id), "", 22)}</span></div>`; }).join("")}
+          return `<div class="row"><span>${esc(i.name)}</span><span class="num">${fmt(itemVal(latest, i.id))}</span><span>${ARROW[sc.r] || "–"}</span><span class="sp">${sparkline(view.map(c => itemVal(c, i.id)), pc(p.id), "", 22)}</span></div>`; }).join("")}
         </div>${note ? `<p class="small muted" style="white-space:pre-wrap">${esc(note)}</p>` : ""}`;
     } else dp.hidden = true;
 
@@ -747,12 +740,11 @@ details.donelist > summary { cursor: pointer; padding: 6px 2px; color: var(--fg-
     pos.slice(0, 3).forEach(t => sg += `<div class="signal pos"><span class="si">↗</span><span>${t}</span></div>`);
     $("signals").innerHTML = sg;
 
-    document.querySelectorAll("#metricSeg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.v === ui.metric));
     document.querySelectorAll("#rangeSeg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.v === ui.range));
     $("legend").innerHTML = PILLARS.map(p => `<span><i class="dot" style="background:${pc(p.id)}"></i>${p.name}</span>`).join("");
     const labels = view.map(c => ui.range === "all" && view.length > 16 ? MON3[weekMonday(c.key).getUTCMonth()] : `W${weekNum(c.key)}`);
-    lineChart($("mainChart"), PILLARS.map(p => ({ name: p.name, color: pc(p.id), vals: view.map(c => pillarVal(c, p.id, ui.metric)) })), labels,
-      { aria: `${ui.metric === "g" ? "Gevoel" : "Situatie"} per pilaar per week`, tipLabels: view.map(c => `Week ${weekNum(c.key)} · ${weekRange(c.key)}`) });
+    lineChart($("mainChart"), PILLARS.map(p => ({ name: p.name, color: pc(p.id), vals: view.map(c => pillarVal(c, p.id)) })), labels,
+      { aria: "Cijfer per pilaar per week", tipLabels: view.map(c => `Week ${weekNum(c.key)} · ${weekRange(c.key)}`) });
 
     const withNotes = S.slice().reverse().filter(c => c.good || c.attn || c.next || Object.values(c.notes || {}).some(Boolean)).slice(0, 5);
     $("notes").innerHTML = withNotes.length ? withNotes.map(c => {
@@ -854,7 +846,7 @@ details.donelist > summary { cursor: pointer; padding: 6px 2px; color: var(--fg-
     if (ex) { ui.draft = JSON.parse(JSON.stringify(ex)); ui.draft.notes ||= {}; ui.draftFrom = "existing"; return; }
     const prev = prevBefore(ui.week);
     ui.draft = { scores: {}, notes: {}, good: "", attn: "", next: "" };
-    if (prev) { ALL_ITEMS.forEach(i => { const s = prev.scores?.[i.id]; if (s) ui.draft.scores[i.id] = { s: s.s ?? null, g: s.g ?? null, r: null }; }); ui.draftFrom = "prev"; }
+    if (prev) { ALL_ITEMS.forEach(i => { const s = prev.scores?.[i.id]; if (s) ui.draft.scores[i.id] = { v: itemVal(prev, i.id) != null ? Math.round(itemVal(prev, i.id)) : null, r: null }; }); ui.draftFrom = "prev"; }
     else ui.draftFrom = "new";
   }
   function renderWeekSel() {
@@ -870,14 +862,14 @@ details.donelist > summary { cursor: pointer; padding: 6px 2px; color: var(--fg-
     $("ciTitle").textContent = ui.week === nowWeek ? "Check-in deze week" : `Check-in week ${weekNum(ui.week)}`;
     $("ciHint").textContent = ui.draftFrom === "existing" ? "Deze week is al ingevuld. Je kunt hem aanpassen."
       : ui.draftFrom === "prev" ? "Je cijfers van vorige keer staan klaar. Pas alleen aan wat anders is, en kies per onderdeel de richting."
-      : "Score: hoe staat het ervoor. Gevoel: hoe rustig of tevreden je je erover voelt. Richting: wordt het beter, blijft het gelijk of wordt het slechter. Wat je niet invult, telt niet mee.";
+      : "Geef per vraag één cijfer: 1 is helemaal niet, 10 is volledig. Kies daarna de richting: wordt het beter, blijft het gelijk of wordt het slechter. Wat je niet invult, telt niet mee.";
     $("pillarForms").innerHTML = PILLARS.map((p, pi) => `
       <details class="pillar" style="--pc:var(--p-${p.id})" ${pi === 0 ? "open" : ""}>
         <summary><span class="t">${icon(p.id)}<h3>${p.full}</h3></span><span class="prog" id="prog-${p.id}"></span></summary>
         <div class="pillar-body">
           ${p.items.map(i => `<div class="item" data-i="${i.id}">
-              <div class="ih"><b>${esc(i.name)}</b><span class="small muted">${esc(i.hint)}</span></div>
-              ${["s", "g"].map(m => `<div class="sl" data-m="${m}"><span>${m === "s" ? "Score" : "Gevoel"}</span><input type="range" min="1" max="10" step="1" id="r-${i.id}-${m}" aria-label="${esc(i.name)} ${m === "s" ? "score" : "gevoel"}"><output for="r-${i.id}-${m}"></output></div>`).join("")}
+              <div class="ih"><span class="label">${esc(i.name)}</span><b>${esc(i.q)}</b></div>
+              <div class="sl" data-m="v"><span>Cijfer</span><input type="range" min="1" max="10" step="1" id="r-${i.id}" aria-label="${esc(i.q)}"><output for="r-${i.id}"></output></div>
               <div class="dirrow"><span>Richting</span><div class="dirbtns">${DIRS.map(d => `<button type="button" data-r="${d.v}">${d.t}</button>`).join("")}</div></div>
             </div>`).join("")}
           <div class="field"><label for="n-${p.id}">Notities, wat speelt er?</label><textarea id="n-${p.id}" data-note="${p.id}"></textarea></div>
@@ -886,16 +878,16 @@ details.donelist > summary { cursor: pointer; padding: 6px 2px; color: var(--fg-
     document.querySelectorAll("#pillarForms .item").forEach(el => {
       const id = el.dataset.i, sc = ui.draft.scores[id] || {};
       el.querySelectorAll(".sl").forEach(sl => {
-        const m = sl.dataset.m, inp = sl.querySelector("input"), out = sl.querySelector("output"), v = sc[m], set = typeof v === "number";
+        const m = sl.dataset.m, inp = sl.querySelector("input"), out = sl.querySelector("output"), v = typeof sc.v === "number" ? sc.v : (sc.s != null || sc.g != null ? Math.round(avg([sc.s, sc.g])) : null), set = typeof v === "number";
         inp.value = set ? v : 5; out.textContent = set ? v : "–"; sl.classList.toggle("unset", !set);
-        const commit = () => { const s = ui.draft.scores[id] || (ui.draft.scores[id] = { s: null, g: null, r: null }); s[m] = Number(inp.value); out.textContent = inp.value; sl.classList.remove("unset"); updateProgress(); dirty(); };
+        const commit = () => { const s = ui.draft.scores[id] || (ui.draft.scores[id] = { v: null, r: null }); s[m] = Number(inp.value); out.textContent = inp.value; sl.classList.remove("unset"); updateProgress(); dirty(); };
         inp.addEventListener("input", commit);
         inp.addEventListener("pointerup", () => { if (sl.classList.contains("unset")) commit(); });
       });
       el.querySelectorAll(".dirbtns button").forEach(b => {
         b.setAttribute("aria-pressed", sc.r === b.dataset.r);
         b.addEventListener("click", () => {
-          const s = ui.draft.scores[id] || (ui.draft.scores[id] = { s: null, g: null, r: null });
+          const s = ui.draft.scores[id] || (ui.draft.scores[id] = { v: null, r: null });
           s.r = s.r === b.dataset.r ? null : b.dataset.r;
           el.querySelectorAll(".dirbtns button").forEach(x => x.setAttribute("aria-pressed", s.r === x.dataset.r)); updateProgress(); dirty();
         });
@@ -908,7 +900,7 @@ details.donelist > summary { cursor: pointer; padding: 6px 2px; color: var(--fg-
   }
   function updateProgress() {
     PILLARS.forEach(p => {
-      const done = p.items.filter(i => { const s = ui.draft.scores[i.id]; return s && s.s != null && s.g != null && s.r; }).length;
+      const done = p.items.filter(i => { const s = ui.draft.scores[i.id]; return s && (s.v != null || s.s != null) && s.r; }).length;
       const el = $("prog-" + p.id); if (el) el.textContent = `${done} van 4`;
     });
   }
@@ -918,13 +910,13 @@ details.donelist > summary { cursor: pointer; padding: 6px 2px; color: var(--fg-
   $("saveBtn").addEventListener("click", () => {
     const d = ui.draft;
     const clean = { scores: {}, notes: {}, good: (d.good || "").trim(), attn: (d.attn || "").trim(), next: (d.next || "").trim(), nextTaskId: d.nextTaskId || null, updatedAt: new Date().toISOString() };
-    Object.entries(d.scores).forEach(([k, v]) => { if (v && (v.s != null || v.g != null || v.r)) clean.scores[k] = { s: v.s ?? null, g: v.g ?? null, r: v.r ?? null }; });
+    Object.entries(d.scores).forEach(([k, v]) => { const val = typeof v?.v === "number" ? v.v : (v && (v.s != null || v.g != null) ? Math.round(avg([v.s, v.g])) : null); if (v && (val != null || v.r)) clean.scores[k] = { v: val, r: v.r ?? null }; });
     Object.entries(d.notes || {}).forEach(([k, v]) => { if (v && v.trim()) clean.notes[k] = v.trim(); });
     if (!Object.keys(clean.scores).length && !clean.good && !clean.attn && !clean.next) { $("saveStatus").textContent = "Vul minstens één onderdeel of een reflectie in."; return; }
     let msg = "";
     if (clean.next && $("rNextTask").checked && !clean.nextTaskId) {
       // link the step to the pillar with the lowest feeling this week
-      const low = PILLARS.map(p => ({ id: p.id, v: avg(p.items.map(i => clean.scores[i.id]?.g)) })).filter(x => x.v != null).sort((a, b) => a.v - b.v)[0];
+      const low = PILLARS.map(p => ({ id: p.id, v: avg(p.items.map(i => clean.scores[i.id]?.v)) })).filter(x => x.v != null).sort((a, b) => a.v - b.v)[0];
       addTask(clean.next, low ? low.id : "gezondheid", true); clean.nextTaskId = state.tasks[0].id; d.nextTaskId = clean.nextTaskId;
       msg = " Je stap staat op je focuslijst.";
     }
@@ -944,11 +936,11 @@ details.donelist > summary { cursor: pointer; padding: 6px 2px; color: var(--fg-
     $("cmpHint").textContent = `${cur.length} check-in${cur.length === 1 ? "" : "s"} in ${monthLabel(ui.month)}, ${prv.length} in ${monthLabel(prevMonth(ui.month))}. Gemiddelden per pilaar.`;
     const cell = (a, b) => { if (a == null) return `<span class="num muted">–</span>`; const d = b == null ? null : a - b;
       return `<span class="num">${fmt(a)}${d == null || Math.abs(d) < 0.05 ? "" : ` <span class="delta ${d > 0 ? "up" : "down"} small">${d > 0 ? "+" : "−"}${fmt(Math.abs(d))}</span>`}</span>`; };
-    $("cmp").innerHTML = `<div class="row label"><span>Pilaar</span><span>Score</span><span>Gevoel</span></div>` + PILLARS.map(p => {
-      const a = m => avg(cur.map(c => pillarVal(c, p.id, m))), b = m => avg(prv.map(c => pillarVal(c, p.id, m)));
-      return `<div class="row"><span>${chip(p.id)}</span>${cell(a("s"), b("s"))}${cell(a("g"), b("g"))}</div>`;
+    $("cmp").innerHTML = `<div class="row label"><span>Pilaar</span><span>Gemiddeld</span><span></span></div>` + PILLARS.map(p => {
+      const a = avg(cur.map(c => pillarVal(c, p.id))), b = avg(prv.map(c => pillarVal(c, p.id)));
+      return `<div class="row"><span>${chip(p.id)}</span>${cell(a, b)}<span></span></div>`;
     }).join("");
-    const mv = ALL_ITEMS.map(i => { const a = avg(cur.map(c => itemVal(c, i.id, "g"))), b = avg(prv.map(c => itemVal(c, i.id, "g"))); return { i, d: a != null && b != null ? a - b : null, a, b }; })
+    const mv = ALL_ITEMS.map(i => { const a = avg(cur.map(c => itemVal(c, i.id))), b = avg(prv.map(c => itemVal(c, i.id))); return { i, d: a != null && b != null ? a - b : null, a, b }; })
       .filter(x => x.d != null && Math.abs(x.d) >= 1).sort((x, y) => Math.abs(y.d) - Math.abs(x.d)).slice(0, 4);
     $("moverPanel").hidden = !mv.length;
     $("movers").innerHTML = mv.map(x => `<div class="signal ${x.d > 0 ? "pos" : "neg"}"><span class="si">${x.d > 0 ? "↗" : "↘"}</span><span><b>${esc(x.i.name)}</b>: gemiddeld ${fmt(x.b)} → ${fmt(x.a)}</span></div>`).join("");
@@ -989,7 +981,6 @@ details.donelist > summary { cursor: pointer; padding: 6px 2px; color: var(--fg-
   });
 
   // ---------- routing ----------
-  $("metricSeg").addEventListener("click", e => { const b = e.target.closest("button"); if (b) { ui.metric = b.dataset.v; saveUi(); renderOverview(); } });
   $("rangeSeg").addEventListener("click", e => { const b = e.target.closest("button"); if (b) { ui.range = b.dataset.v; saveUi(); renderOverview(); } });
   const VIEWS = ["overzicht", "focus", "checkin", "terugblik"];
   function route() {
