@@ -123,7 +123,8 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 .ring .val span { font-size: 0.75rem; color: var(--fg-3); }
 .plist { display: grid; gap: 6px; }
 .plist .row { display: flex; justify-content: space-between; gap: 8px; align-items: center; font-size: 0.88rem; }
-.radar svg { width: 100%; max-width: 380px; display: block; margin: 0 auto; overflow: visible; }
+.quarters svg { width: 100%; max-width: 260px; display: block; margin: 0 auto; }
+.plist .row .sub { display: block; font-size: 0.74rem; color: var(--fg-3); }
 
 /* pillar tiles */
 .tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
@@ -308,11 +309,8 @@ details.donelist > summary { cursor: pointer; padding: 6px 2px; color: var(--fg-
       <div class="panel">
         <h2>Mijn balans</h2>
         <div class="balance">
-          <div class="total">
-            <div class="ring" id="totalRing"></div>
-            <div class="plist" id="pillarList"></div>
-          </div>
-          <div class="radar" id="radar"></div>
+          <div class="quarters" id="quarters"></div>
+          <div class="plist" id="pillarList"></div>
         </div>
         <p class="small muted" id="balanceHint"></p>
       </div>
@@ -601,6 +599,25 @@ details.donelist > summary { cursor: pointer; padding: 6px 2px; color: var(--fg-
     const l = pts[pts.length - 1];
     return `<svg class="${cls}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true"><path d="${d}" fill="none" stroke="${color}" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/><circle cx="${X(l[0])}" cy="${Y(l[1])}" r="2.6" fill="${color}"/></svg>`;
   }
+  // One circle in four quarters; each quarter fills clockwise from 0 to 100%. Outer track = score, inner = gevoel.
+  function quarters(el, ci, tot) {
+    const C = 110, gapDeg = 7, tracks = [{ r: 92, m: "s", o: 1 }, { r: 70, m: "g", o: 0.62 }], W = 17;
+    const pt = (deg, r) => { const a = (deg - 90) * Math.PI / 180; return [C + Math.cos(a) * r, C + Math.sin(a) * r]; };
+    const arcPath = (d0, d1, r) => { const [x0, y0] = pt(d0, r), [x1, y1] = pt(d1, r); return `M${x0.toFixed(2)},${y0.toFixed(2)} A${r},${r} 0 0 1 ${x1.toFixed(2)},${y1.toFixed(2)}`; };
+    let s = `<svg viewBox="0 0 ${2 * C} ${2 * C}" role="img" aria-label="Balans per pilaar: ${PILLARS.map(p => `${p.name} ${fmt(pillarBoth(ci, p.id))}`).join(", ")}">`;
+    PILLARS.forEach((p, i) => {
+      const col = pc(p.id), d0 = i * 90 + gapDeg / 2, span = 90 - gapDeg;
+      tracks.forEach(t => {
+        s += `<path d="${arcPath(d0, d0 + span, t.r)}" fill="none" stroke="${col}" stroke-opacity=".16" stroke-width="${W}"/>`;
+        const v = pillarVal(ci, p.id, t.m);
+        if (v != null && v > 0) s += `<path d="${arcPath(d0, d0 + span * Math.min(v, 10) / 10, t.r)}" fill="none" stroke="${col}" stroke-opacity="${t.o}" stroke-width="${W}"/>`;
+      });
+      const [ix, iy] = pt(i * 90 + 45, 46);
+      s += `<svg x="${ix - 9}" y="${iy - 9}" width="18" height="18" viewBox="0 0 24 24" style="color:${col}"><use href="#i-${p.id}"/></svg>`;
+    });
+    s += `<text x="${C}" y="${C + 9}" text-anchor="middle" font-family="Bricolage Grotesque, system-ui, sans-serif" font-size="26" font-weight="650" fill="${css("--fg")}">${fmt(tot)}</text>`;
+    el.innerHTML = s + `</svg>`;
+  }
   function radar(el, cur, prev) {
     const S = 300, c = S / 2, R = 110, n = 4, ang = i => -Math.PI / 2 + i * 2 * Math.PI / n;
     const pt = (i, v) => [c + Math.cos(ang(i)) * R * v / 10, c + Math.sin(ang(i)) * R * v / 10];
@@ -688,13 +705,13 @@ details.donelist > summary { cursor: pointer; padding: 6px 2px; color: var(--fg-
     // total + radar
     const cur = PILLARS.map(p => pillarBoth(latest, p.id));
     const tot = avg(cur);
-    ring($("totalRing"), (tot || 0) / 10, fmt(tot), "van 10");
+    quarters($("quarters"), latest, tot);
     $("pillarList").innerHTML = `<span class="label">Score per pilaar</span>` + PILLARS.map((p, i) => {
       const pv = prev ? pillarBoth(prev, p.id) : null, d = cur[i] != null && pv != null ? cur[i] - pv : null;
-      return `<div class="row">${chip(p.id)}<span class="num">${fmt(cur[i])}${d != null && Math.abs(d) >= 0.05 ? ` <span class="small delta ${d > 0 ? "up" : "down"}">${d > 0 ? "+" : "−"}${fmt(Math.abs(d))}</span>` : ""}</span></div>`;
+      const sv = pillarVal(latest, p.id, "s"), gv = pillarVal(latest, p.id, "g");
+      return `<div class="row"><span>${chip(p.id)}<span class="sub">Score ${fmt(sv)} · gevoel ${fmt(gv)}</span></span><span class="num">${fmt(cur[i])}${d != null && Math.abs(d) >= 0.05 ? ` <span class="small delta ${d > 0 ? "up" : "down"}">${d > 0 ? "+" : "−"}${fmt(Math.abs(d))}</span>` : ""}</span></div>`;
     }).join("");
-    radar($("radar"), cur, prev ? PILLARS.map(p => pillarBoth(prev, p.id)) : null);
-    $("balanceHint").textContent = `Gemiddelde van situatie en gevoel, week ${weekNum(latest.key)}.${prev ? ` De stippellijn is week ${weekNum(prev.key)}.` : ""}`;
+    $("balanceHint").textContent = `Elk kwart is een pilaar en is vol bij een 10. De buitenste ring is de score, de binnenste je gevoel. Week ${weekNum(latest.key)}${prev ? `, verschil met week ${weekNum(prev.key)}` : ""}.`;
 
     // tiles
     const view = ui.range === "12" ? S.slice(-12) : S;
