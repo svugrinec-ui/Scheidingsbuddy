@@ -123,7 +123,16 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 .ring .val span { font-size: 0.75rem; color: var(--fg-3); }
 .plist { display: grid; gap: 6px; }
 .plist .row { display: flex; justify-content: space-between; gap: 8px; align-items: center; font-size: 0.88rem; }
-.quarters svg { width: 100%; max-width: 260px; display: block; margin: 0 auto; }
+.quarters { background: #000; border-radius: 22px; padding: 10px 6px; }
+.quarters svg { width: 100%; max-width: 440px; display: block; margin: 0 auto; }
+.balance { grid-template-columns: 1fr !important; }
+.tiles .tile { background: #000 !important; color: #f5f5f7 !important; border-color: #000; }
+.tiles .tile .name, .tiles .tile .big { color: #f5f5f7 !important; }
+.tile .name .ic { color: var(--pc); }
+.tile .sub, .tile .dirs, .tile .big small { color: #98989f !important; }
+.tile .ringrow { display: flex; align-items: center; gap: 10px; }
+.mring { width: 64px; height: 64px; flex: none; }
+.mring svg use { stroke: currentColor; }
 .plist .row .sub { display: block; font-size: 0.74rem; color: var(--fg-3); }
 
 /* pillar tiles */
@@ -133,7 +142,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
   background: color-mix(in srgb, var(--pc) var(--tint), var(--surface)); border-radius: var(--r); padding: 14px; display: grid; gap: 8px;
   border: 2px solid transparent; text-align: left; font: inherit; color: inherit; cursor: pointer; min-width: 0;
 }
-.tile[aria-expanded="true"] { border-color: var(--pc); }
+.tiles .tile[aria-expanded="true"] { border-color: var(--pc); }
 .tile .name { display: flex; align-items: center; gap: 8px; font-weight: 600; }
 .tile .name .ic { color: var(--pc); }
 .tile .scores { display: flex; gap: 14px; }
@@ -675,23 +684,52 @@ input[type="month"] { font: inherit; font-size: 16px; color: var(--fg); backgrou
     return `<svg class="${cls}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true"><path d="${d}" fill="none" stroke="${color}" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/><circle cx="${X(l[0])}" cy="${Y(l[1])}" r="2.6" fill="${color}"/></svg>`;
   }
   // One circle in four quarters; each quarter fills clockwise from 0 to 100% (a 10).
+  // Vivid Apple-style gradient per pillar, used by the figure and the ring tiles.
+  const VIVID = { relatie: ["#ff3b5c", "#ff8a5c"], wonen: ["#12d18e", "#8cf7c8"], werk: ["#1e7bff", "#6fd0ff"], gezondheid: ["#ffb000", "#ffe766"] };
+  const MIN_SUPPORT = 5;
+  let gid = 0;
+  // Vitruvian figure: arms are Relatie and Werk, legs Wonen and Gezondheid. A limb touching the circle is a 10; the dashed line is the minimum.
   function quarters(el, ci, tot) {
-    const C = 110, gapDeg = 7, tracks = [{ r: 86, o: 1 }], W = 26;
-    const pt = (deg, r) => { const a = (deg - 90) * Math.PI / 180; return [C + Math.cos(a) * r, C + Math.sin(a) * r]; };
-    const arcPath = (d0, d1, r) => { const [x0, y0] = pt(d0, r), [x1, y1] = pt(d1, r); return `M${x0.toFixed(2)},${y0.toFixed(2)} A${r},${r} 0 0 1 ${x1.toFixed(2)},${y1.toFixed(2)}`; };
-    let s = `<svg viewBox="0 0 ${2 * C} ${2 * C}" role="img" aria-label="Balans per pilaar: ${PILLARS.map(p => `${p.name} ${fmt(pillarVal(ci, p.id))}`).join(", ")}">`;
-    PILLARS.forEach((p, i) => {
-      const col = pc(p.id), d0 = i * 90 + gapDeg / 2, span = 90 - gapDeg;
-      tracks.forEach(t => {
-        s += `<path d="${arcPath(d0, d0 + span, t.r)}" fill="none" stroke="${col}" stroke-opacity=".16" stroke-width="${W}"/>`;
-        const v = pillarVal(ci, p.id);
-        if (v != null && v > 0) s += `<path d="${arcPath(d0, d0 + span * Math.min(v, 10) / 10, t.r)}" fill="none" stroke="${col}" stroke-opacity="${t.o}" stroke-width="${W}"/>`;
-      });
-      const [ix, iy] = pt(i * 90 + 45, 52);
-      s += `<svg x="${ix - 9}" y="${iy - 9}" width="18" height="18" viewBox="0 0 24 24" style="color:${col}"><use href="#i-${p.id}"/></svg>`;
+    const W = 430, H = 360, cx = 215, cy = 182, R = 136, INK = "#f5f5f7", WARN = "#ff9f0a";
+    const LIMBS = [{ id: "relatie", deg: 196, j: "sh" }, { id: "werk", deg: 344, j: "sh" }, { id: "wonen", deg: 118, j: "hip" }, { id: "gezondheid", deg: 62, j: "hip" }];
+    const J = { sh: [cx, cy - 52], hip: [cx, cy + 16] };
+    const hit = (j, t) => { const dx = Math.cos(t), dy = Math.sin(t), ox = j[0] - cx, oy = j[1] - cy, b = ox * dx + oy * dy, c = ox * ox + oy * oy - R * R, k = -b + Math.sqrt(b * b - c); return [j[0] + dx * k, j[1] + dy * k]; };
+    const geo = LIMBS.map(l => { const t = l.deg * Math.PI / 180, j = J[l.j], F = hit(j, t); return { ...l, t, jp: j, F, at: f => [j[0] + (F[0] - j[0]) * f, j[1] + (F[1] - j[1]) * f] }; });
+    let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Balans per pilaar: ${PILLARS.map(p => `${p.name} ${fmt(pillarVal(ci, p.id))}`).join(", ")}"><defs>`;
+    const ids = geo.map(g => { const id = "vg" + (gid++); s += `<linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="${g.jp[0]}" y1="${g.jp[1]}" x2="${g.F[0]}" y2="${g.F[1]}"><stop offset="0" stop-color="${VIVID[g.id][0]}"/><stop offset="1" stop-color="${VIVID[g.id][1]}"/></linearGradient>`; return id; });
+    s += `</defs>`;
+    const sq = R * 1.62, sy = cy - R * 0.62;
+    s += `<rect x="${cx - sq / 2}" y="${sy}" width="${sq}" height="${sq}" fill="none" stroke="${INK}" stroke-opacity=".16" stroke-width="1.5"/>`;
+    s += `<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="${INK}" stroke-opacity=".42" stroke-width="2"/>`;
+    const mp = [0, 1, 3, 2].map(i => geo[i].at(MIN_SUPPORT / 10));
+    let d = `M${mp[0][0]},${mp[0][1]}`;
+    for (let k = 0; k < 4; k++) { const p0 = mp[(k + 3) % 4], p1 = mp[k], p2 = mp[(k + 1) % 4], p3 = mp[(k + 2) % 4];
+      d += ` C${p1[0] + (p2[0] - p0[0]) / 6},${p1[1] + (p2[1] - p0[1]) / 6} ${p2[0] - (p3[0] - p1[0]) / 6},${p2[1] - (p3[1] - p1[1]) / 6} ${p2[0]},${p2[1]}`; }
+    s += `<path d="${d}Z" fill="none" stroke="${INK}" stroke-opacity=".55" stroke-width="1.5" stroke-dasharray="5 6"/>`;
+    s += `<text x="${mp[1][0] + 8}" y="${mp[1][1] + 26}" font-size="9.5" font-weight="700" fill="#98989f" font-family="Inter,-apple-system,system-ui">MIN ${MIN_SUPPORT}</text>`;
+    geo.forEach((g, i) => {
+      const v = pillarVal(ci, g.id), [a, b] = VIVID[g.id];
+      s += `<line x1="${g.jp[0]}" y1="${g.jp[1]}" x2="${g.F[0]}" y2="${g.F[1]}" stroke="${a}" stroke-opacity=".2" stroke-width="15" stroke-linecap="round"/>`;
+      if (v != null) {
+        const E = g.at(Math.max(v, 1) / 10);
+        s += `<line x1="${g.jp[0]}" y1="${g.jp[1]}" x2="${E[0]}" y2="${E[1]}" stroke="url(#${ids[i]})" stroke-width="15" stroke-linecap="round"/><circle cx="${E[0]}" cy="${E[1]}" r="7.5" fill="${b}"/>`;
+        if (v < MIN_SUPPORT) s += `<circle cx="${E[0]}" cy="${E[1]}" r="13" fill="none" stroke="${WARN}" stroke-width="2.5"/>`;
+      }
+      const Lx = g.F[0] + Math.cos(g.t) * 16, Ly = g.F[1] + Math.sin(g.t) * 16;
+      const anchor = Math.cos(g.t) < -0.2 ? "end" : Math.cos(g.t) > 0.2 ? "start" : "middle", dy = Math.sin(g.t) > 0.5 ? 12 : Math.sin(g.t) < -0.5 ? -4 : 4;
+      s += `<text x="${Lx}" y="${Ly + dy}" text-anchor="${anchor}" font-family="Inter,-apple-system,system-ui"><tspan font-size="10" font-weight="700" letter-spacing=".5" fill="${b}">${P(g.id).name.toUpperCase()}</tspan><tspan x="${Lx}" dy="15" font-size="15" font-weight="700" fill="${INK}">${fmt(v)}</tspan></text>`;
     });
-    s += `<text x="${C}" y="${C + 9}" text-anchor="middle" font-family="Bricolage Grotesque, system-ui, sans-serif" font-size="26" font-weight="650" fill="${css("--fg")}">${fmt(tot)}</text>`;
+    s += `<line x1="${cx}" y1="${cy - 62}" x2="${cx}" y2="${cy + 20}" stroke="${INK}" stroke-width="15" stroke-linecap="round"/><circle cx="${cx}" cy="${cy - 88}" r="16" fill="${INK}"/>`;
+    s += `<text x="${cx}" y="${cy - 116}" text-anchor="middle" font-size="12" font-weight="700" fill="#98989f" font-family="Inter,-apple-system,system-ui">${fmt(tot)} GEMIDDELD</text>`;
     el.innerHTML = s + `</svg>`;
+  }
+  function miniRing(id, v) {
+    const r = 36, w = 13, c = 2 * Math.PI * r, f = Math.max(0, Math.min(1, (v || 0) / 10)), gidr = "rg" + (gid++), [a, b] = VIVID[id];
+    const ang = (f * 360 - 90) * Math.PI / 180, ex = 50 + Math.cos(ang) * r, ey = 50 + Math.sin(ang) * r;
+    return `<svg class="mring" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="${gidr}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs>
+      <circle cx="50" cy="50" r="${r}" fill="none" stroke="${a}" stroke-opacity=".22" stroke-width="${w}"/>
+      ${v != null ? `<circle cx="50" cy="50" r="${r}" fill="none" stroke="url(#${gidr})" stroke-width="${w}" stroke-linecap="round" stroke-dasharray="${(c * f).toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 50 50)"/><circle cx="${ex}" cy="${ey}" r="${w / 2}" fill="${b}"/>` : ""}
+      <svg x="39" y="39" width="22" height="22" viewBox="0 0 24 24" style="color:${b}"><use href="#i-${id}"/></svg></svg>`;
   }
   function radar(el, cur, prev) {
     const S = 300, c = S / 2, R = 110, n = 4, ang = i => -Math.PI / 2 + i * 2 * Math.PI / n;
@@ -787,7 +825,7 @@ input[type="month"] { font: inherit; font-size: 16px; color: var(--fg); backgrou
       const pv = prev ? pillarVal(prev, p.id) : null, d = cur[i] != null && pv != null ? cur[i] - pv : null;
       return `<div class="row"><span>${chip(p.id)}</span><span class="num">${fmt(cur[i])}${d != null && Math.abs(d) >= 0.05 ? ` <span class="small delta ${d > 0 ? "up" : "down"}">${d > 0 ? "+" : "−"}${fmt(Math.abs(d))}</span>` : ""}</span></div>`;
     }).join("");
-    $("balanceHint").textContent = `Elk kwart is een pilaar en is vol bij een 10. Week ${weekNum(latest.key)}${prev ? `, verschil met week ${weekNum(prev.key)}` : ""}.`;
+    $("balanceHint").textContent = `Je armen zijn Relatie en Werk, je benen Wonen en Gezondheid. Raakt een ledemaat de cirkel, dan is dat een 10. De stippellijn is je minimum van ${MIN_SUPPORT}. Week ${weekNum(latest.key)}${prev ? `, verschil met week ${weekNum(prev.key)}` : ""}.`;
 
     // tiles
     const view = ui.range === "12" ? S.slice(-12) : S;
@@ -796,7 +834,7 @@ input[type="month"] { font: inherit; font-size: 16px; color: var(--fg); backgrou
       const dirs = p.items.map(i => latest.scores?.[i.id]?.r).filter(Boolean), cnt = { up: 0, flat: 0, down: 0 }; dirs.forEach(d => cnt[d]++);
       return `<button type="button" class="tile" style="--pc:var(--p-${p.id})" data-p="${p.id}" aria-expanded="${ui.openPillar === p.id}">
         <span class="name">${icon(p.id)}${p.name}</span>
-        <span class="big num">${fmt(pv)}<small>/10</small></span>
+        <span class="ringrow">${miniRing(p.id, pv)}<span class="big num">${fmt(pv)}<small>/10</small></span></span>
         ${sparkline(view.map(c => pillarVal(c, p.id)), pc(p.id))}
         <span class="dirs">${dirs.length ? `${cnt.up}× ↑ · ${cnt.flat}× → · ${cnt.down}× ↓` : "Geen richting ingevuld"}</span>
       </button>`;
