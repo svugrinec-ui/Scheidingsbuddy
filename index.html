@@ -204,12 +204,13 @@ details.pillar[open] > summary::after { content: "–"; }
 .item:first-child { border-top: 0; }
 .item .ih { display: grid; gap: 2px; }
 .item .ih b { font-weight: 600; }
-.sl { display: grid; grid-template-columns: 62px minmax(0,1fr) 30px; gap: 10px; align-items: center; font-size: 0.85rem; color: var(--fg-2); }
+.sl { display: grid; grid-template-columns: 84px minmax(0,1fr) 30px; gap: 10px; align-items: center; font-size: 0.85rem; color: var(--fg-2); }
 .sl output { font-weight: 600; color: var(--fg); text-align: right; font-variant-numeric: tabular-nums; }
 .sl.unset output { color: var(--fg-3); font-weight: 400; }
 .sl.unset input { opacity: .4; }
 input[type="range"] { width: 100%; accent-color: var(--accent); height: 30px; margin: 0; }
-.dirrow { display: grid; grid-template-columns: 62px minmax(0,1fr); gap: 10px; align-items: center; font-size: 0.85rem; color: var(--fg-2); }
+.prevv { font-size: 0.8rem; color: var(--fg-3); padding-left: 94px; margin-top: -6px; }
+.dirrow { display: grid; grid-template-columns: 84px minmax(0,1fr); gap: 10px; align-items: center; font-size: 0.85rem; color: var(--fg-2); }
 .dirbtns { display: flex; gap: 6px; }
 .dirbtns button {
   flex: 1; border: 1px solid var(--line); background: var(--surface); color: var(--fg-2); font: inherit; font-size: 0.85rem;
@@ -628,7 +629,7 @@ input[type="month"] { font: inherit; font-size: 16px; color: var(--fg); backgrou
   function computeSignals() {
     const S = series(), neg = [], pos = [];
     ALL_ITEMS.forEach(it => {
-      if (S.length >= 3 && S.slice(-3).every(c => c.scores?.[it.id]?.r === "down")) neg.push(`<b>${esc(it.name)}</b>: drie check-ins op rij geef je de richting ↓.`);
+      if (S.length >= 3 && S.slice(-3).every(c => c.scores?.[it.id]?.r === "down")) neg.push(`<b>${esc(it.name)}</b>: drie check-ins op rij verwacht je dat het slechter wordt.`);
       const vals = S.map(c => itemVal(c, it.id)), t = trend(vals), l = vals.slice(-4);
       if (t === -1) neg.push(`<b>${esc(it.name)}</b>: daalt al vier weken, van ${fmt(l[0])} naar ${fmt(l[3])}.`);
       if (t === 1) pos.push(`<b>${esc(it.name)}</b>: stijgt al vier weken, van ${fmt(l[0])} naar ${fmt(l[3])}.`);
@@ -796,7 +797,7 @@ input[type="month"] { font: inherit; font-size: 16px; color: var(--fg); backgrou
       const p = P(ui.openPillar), note = latest.notes?.[p.id];
       dp.hidden = false;
       dp.innerHTML = `<h3>${p.full}, week ${weekNum(latest.key)}</h3>
-        <div class="detail"><div class="row head"><span>Onderdeel</span><span>Cijfer</span><span>Rich.</span><span class="sp">Verloop</span></div>
+        <div class="detail"><div class="row head"><span>Onderdeel</span><span>Cijfer</span><span>Verw.</span><span class="sp">Verloop</span></div>
         ${p.items.map(i => { const sc = latest.scores?.[i.id] || {};
           return `<div class="row"><span>${esc(i.name)}</span><span class="num">${fmt(itemVal(latest, i.id))}</span><span>${ARROW[sc.r] || "–"}</span><span class="sp">${sparkline(view.map(c => itemVal(c, i.id)), pc(p.id), "", 22)}</span></div>`; }).join("")}
         </div>${note ? `<p class="small muted" style="white-space:pre-wrap">${esc(note)}</p>` : ""}`;
@@ -1007,8 +1008,9 @@ input[type="month"] { font: inherit; font-size: 16px; color: var(--fg); backgrou
     renderWeekSel();
     $("ciTitle").textContent = ui.week === nowWeek ? "Check-in deze week" : `Check-in week ${weekNum(ui.week)}`;
     $("ciHint").textContent = ui.draftFrom === "existing" ? "Deze week is al ingevuld. Je kunt hem aanpassen."
-      : ui.draftFrom === "prev" ? "Je cijfers van vorige keer staan klaar. Pas alleen aan wat anders is, en kies per onderdeel de richting."
-      : "Geef per vraag één cijfer: 1 is helemaal niet, 10 is volledig. Kies daarna de richting: wordt het beter, blijft het gelijk of wordt het slechter. Wat je niet invult, telt niet mee.";
+      : ui.draftFrom === "prev" ? "Je cijfers van vorige keer staan klaar. Pas alleen aan wat anders is. De verwachting is optioneel."
+      : "Geef per vraag één cijfer: 1 is helemaal niet, 10 is volledig. Het verschil met vorige week ziet de app zelf. Bij verwachting geef je aan waar het de komende weken heen gaat, los van het cijfer van nu. Die is optioneel. Wat je niet invult, telt niet mee.";
+    const prevCi = prevBefore(ui.week);
     $("pillarForms").innerHTML = PILLARS.map((p, pi) => `
       <details class="pillar" style="--pc:var(--p-${p.id})" ${pi === 0 ? "open" : ""}>
         <summary><span class="t">${icon(p.id)}<h3>${p.full}</h3></span><span class="prog" id="prog-${p.id}"></span></summary>
@@ -1016,7 +1018,8 @@ input[type="month"] { font: inherit; font-size: 16px; color: var(--fg); backgrou
           ${p.items.map(i => `<div class="item" data-i="${i.id}">
               <div class="ih"><span class="label">${esc(i.name)}</span><b>${esc(i.q)}</b></div>
               <div class="sl" data-m="v"><span>Cijfer</span><input type="range" min="1" max="10" step="1" id="r-${i.id}" aria-label="${esc(i.q)}"><output for="r-${i.id}"></output></div>
-              <div class="dirrow"><span>Richting</span><div class="dirbtns">${DIRS.map(d => `<button type="button" data-r="${d.v}">${d.t}</button>`).join("")}</div></div>
+              ${(() => { const pv = prevCi ? itemVal(prevCi, i.id) : null; return pv != null ? `<div class="prevv">Vorige keer: ${fmt(pv).replace(",0", "")}</div>` : ""; })()}
+              <div class="dirrow"><span>Verwachting</span><div class="dirbtns">${DIRS.map(d => `<button type="button" data-r="${d.v}">${d.t}</button>`).join("")}</div></div>
             </div>`).join("")}
           <div class="field"><label for="n-${p.id}">Notities, wat speelt er?</label><textarea id="n-${p.id}" data-note="${p.id}"></textarea></div>
         </div>
@@ -1046,7 +1049,7 @@ input[type="month"] { font: inherit; font-size: 16px; color: var(--fg); backgrou
   }
   function updateProgress() {
     PILLARS.forEach(p => {
-      const done = p.items.filter(i => { const s = ui.draft.scores[i.id]; return s && (s.v != null || s.s != null) && s.r; }).length;
+      const done = p.items.filter(i => { const s = ui.draft.scores[i.id]; return s && (s.v != null || s.s != null); }).length;
       const el = $("prog-" + p.id); if (el) el.textContent = `${done} van 4`;
     });
   }
