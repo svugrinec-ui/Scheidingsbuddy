@@ -265,6 +265,26 @@ details.donelist > summary { cursor: pointer; padding: 6px 2px; color: var(--fg-
 .cmp .row:first-child { border-top: 0; }
 .delta.up { color: var(--good); }
 .delta.down { color: var(--warn); }
+.bufhead { display: flex; justify-content: space-between; align-items: end; gap: 12px; }
+.bufnum { font-family: var(--font-display); font-size: 1.7rem; font-weight: 650; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.bar { height: 12px; border-radius: 99px; background: color-mix(in srgb, var(--p-werk) var(--tint), var(--surface-2)); overflow: hidden; }
+.bar span { display: block; height: 100%; width: 0; background: var(--p-werk); border-radius: 99px; transition: width .4s; }
+.mini-edit > summary { cursor: pointer; font-size: 0.88rem; color: var(--fg-2); font-weight: 600; padding: 2px 0; }
+.mini-edit[open] { display: grid; gap: 10px; }
+.formgrid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 8px 10px; align-items: center; font-size: 0.88rem; color: var(--fg-2); }
+@media (max-width: 380px) { .formgrid { grid-template-columns: 1fr; } }
+input[type="month"] { font: inherit; font-size: 16px; color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; width: 100%; }
+.plans { display: grid; }
+.plan { display: grid; grid-template-columns: minmax(0,1fr) auto 32px; gap: 8px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); }
+.plan:first-child { border-top: 0; }
+.plan .t { font-weight: 600; overflow-wrap: anywhere; }
+.plan .m { font-size: 0.78rem; color: var(--fg-3); }
+.plan.paid .t { color: var(--fg-3); text-decoration: line-through; }
+.plan .amt { text-align: right; font-variant-numeric: tabular-nums; font-size: 0.9rem; }
+.plan .amt small { display: block; color: var(--fg-3); font-size: 0.74rem; }
+.ritme { display: grid; gap: 4px; }
+.ritme label { display: flex; gap: 10px; align-items: center; padding: 6px 0; font-size: 0.92rem; }
+.ritme input { width: 20px; height: 20px; accent-color: var(--good); }
 .motto { text-align: center; font-family: var(--font-display); font-size: 0.95rem; color: var(--fg-3); padding: 6px 12px; }
 </style>
 </head>
@@ -372,6 +392,49 @@ details.donelist > summary { cursor: pointer; padding: 6px 2px; color: var(--fg-
       <summary id="doneSummary">Gedaan</summary>
       <div class="tasks" id="tasksDone"></div>
     </details>
+
+    <div class="grouphead" style="padding-top:12px"><h3>Buffer &amp; grote uitgaven</h3><span class="pchip" style="--pc:var(--p-werk)"><svg class="ic" aria-hidden="true"><use href="#i-werk"/></svg>Werk</span></div>
+    <div class="panel" id="bufferPanel">
+      <div class="bufhead">
+        <div style="display:grid;gap:2px;min-width:0">
+          <span class="label">Buffer op aparte rekening</span>
+          <span class="bufnum" id="bufNum"></span>
+          <span class="small muted" id="bufSub"></span>
+        </div>
+      </div>
+      <div class="bar" aria-hidden="true"><span id="bufBar"></span></div>
+      <p class="small" id="bufMonths"></p>
+      <details class="mini-edit">
+        <summary>Stand, doel en maandlasten aanpassen</summary>
+        <div class="formgrid">
+          <label for="bufCur">Huidige stand (€)</label><input type="text" inputmode="numeric" id="bufCur">
+          <label for="bufGoal">Doel (€)</label><input type="text" inputmode="numeric" id="bufGoal">
+          <label for="bufCosts">Privé maandlasten (€)</label><input type="text" inputmode="numeric" id="bufCosts" placeholder="Wat je per maand nodig hebt">
+        </div>
+        <div class="actions"><button class="btn" type="button" id="bufSave">Bijwerken</button><span class="status" id="bufStatus" role="status"></span></div>
+      </details>
+    </div>
+
+    <div class="panel">
+      <div class="chart-head"><h3>Geplande grote uitgaven</h3><span class="small muted" id="planTotal"></span></div>
+      <p class="small muted">Zet grote uitgaven er vooraf in. Dan zie je wat je per maand opzij moet zetten, zodat ze je niet meer overvallen.</p>
+      <div id="planList" class="plans"></div>
+      <div class="formgrid plan-add">
+        <label for="planTitle">Wat</label><input type="text" id="planTitle" placeholder="Bijvoorbeeld: schilder, vloer, notaris">
+        <label for="planAmt">Bedrag (€)</label><input type="text" inputmode="numeric" id="planAmt">
+        <label for="planMonth">Wanneer</label><input type="month" id="planMonth">
+      </div>
+      <div class="actions"><button class="btn ghost" type="button" id="planAdd">Uitgave toevoegen</button><span class="status" id="planStatus" role="status"></span></div>
+    </div>
+
+    <div class="panel">
+      <div class="chart-head"><h3 id="ritmeTitle">Maandritme</h3><span class="small muted" id="ritmeCount"></span></div>
+      <p class="small muted">Elke maand hetzelfde ritme: een vaste uitkering uit de bv, en wat overblijft gaat naar de rc-aflossing en tegenvallers.</p>
+      <div class="ritme" id="ritme"></div>
+      <div class="formgrid">
+        <label for="payout">Vaste uitkering uit de bv (€ per maand)</label><input type="text" inputmode="numeric" id="payout">
+      </div>
+    </div>
   </section>
 
   <!-- CHECK-IN -->
@@ -516,7 +579,7 @@ details.donelist > summary { cursor: pointer; padding: 6px 2px; color: var(--fg-
 
   // ---------- storage (this device only) ----------
   const KEY = "levensbalans-v1";
-  let state = { checkins: {}, reflections: {}, tasks: [], seeded: false };
+  let state = { checkins: {}, reflections: {}, tasks: [], seeded: false, buffer: null };
   let storageOk = true;
   function load() {
     try { const d = JSON.parse(localStorage.getItem(KEY)); if (d) state = { checkins: {}, reflections: {}, tasks: [], ...d }; }
@@ -530,6 +593,10 @@ details.donelist > summary { cursor: pointer; padding: 6px 2px; color: var(--fg-
       ];
       state.seeded = true; persist();
     }
+  }
+  function buf() {
+    if (!state.buffer) state.buffer = { goal: 25000, current: null, costs: null, payout: null, planned: [], ritme: {}, updatedAt: null };
+    return state.buffer;
   }
   function persist() {
     try { localStorage.setItem(KEY, JSON.stringify(state)); storageOk = true; return true; }
@@ -687,6 +754,7 @@ details.donelist > summary { cursor: pointer; padding: 6px 2px; color: var(--fg-
         const st = t.steps || [], d = st.filter(x => x.done).length;
         return `<div class="note" style="grid-template-columns:minmax(0,1fr) auto;align-items:center"><span style="font-weight:600;overflow-wrap:anywhere">${esc(t.title)}</span>${chip(t.pillar)}${st.length ? `<span class="small muted">${d} van ${st.length} stappen gedaan</span>` : ""}</div>`;
       }).join("")}</div>` : `<p class="small muted">Niets op je lijst voor nu.</p>`}
+      ${bufferSummary() ? `<p class="small">${bufferSummary()}</p>` : ""}
       <p class="small muted">${doneWeek ? `${doneWeek} ding${doneWeek === 1 ? "" : "en"} afgerond deze week. ` : ""}${open.length - now.length ? `${open.length - now.length} voor later.` : ""}</p>`;
   }
   function renderOverview() {
@@ -760,6 +828,83 @@ details.donelist > summary { cursor: pointer; padding: 6px 2px; color: var(--fg-
   }
 
   // ---------- Focus ----------
+  // ---------- Buffer ----------
+  const eur = n => n == null || isNaN(n) ? "–" : "€ " + Math.round(n).toLocaleString("nl-NL");
+  const parseEur = v => { const n = Number(String(v || "").replace(/[^0-9,.-]/g, "").replace(/\./g, "").replace(",", ".")); return String(v || "").trim() === "" || isNaN(n) ? null : n; };
+  const monthKey = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  const monthsUntil = mk => { const [y, m] = mk.split("-").map(Number), n = new Date(); return Math.max(1, (y - n.getFullYear()) * 12 + (m - 1 - n.getMonth()) + 1); };
+  function planReserve() {
+    const b = buf(); return b.planned.filter(x => !x.paid).reduce((s, x) => s + x.amount / monthsUntil(x.month), 0);
+  }
+  const RITME = [
+    { k: "payout", t: () => `Vaste uitkering uit de bv gedaan${buf().payout ? ` (${eur(buf().payout)})` : ""}` },
+    { k: "reserve", t: () => { const r = planReserve(); return r ? `${eur(Math.ceil(r / 50) * 50)} apart gezet voor grote uitgaven` : "Geplande uitgaven bekeken"; } },
+    { k: "buffer", t: () => "Bufferstand bijgewerkt" },
+    { k: "rc", t: () => "Rest naar rc-aflossing of buffer" },
+  ];
+  function bufferSummary() {
+    const b = buf(); if (b.current == null) return "";
+    const pct = b.goal ? Math.min(100, Math.round(b.current / b.goal * 100)) : 0;
+    const mo = b.costs ? ` · ${fmt(b.current / b.costs)} maand${b.current / b.costs === 1 ? "" : "en"} vrij` : "";
+    return `Buffer ${eur(b.current)} van ${eur(b.goal)} (${pct}%)${mo}.`;
+  }
+  function renderBuffer() {
+    const b = buf();
+    const pct = b.current != null && b.goal ? Math.min(100, b.current / b.goal * 100) : 0;
+    $("bufNum").textContent = b.current == null ? "Nog niet ingevuld" : `${eur(b.current)}`;
+    $("bufSub").textContent = b.current == null ? `Doel ${eur(b.goal)}. Vul hieronder je huidige stand in.` : `van ${eur(b.goal)} · ${Math.round(pct)}%${b.updatedAt ? ` · bijgewerkt ${new Date(b.updatedAt).toLocaleDateString("nl-NL", { day: "numeric", month: "short" })}` : ""}`;
+    $("bufBar").style.width = pct + "%";
+    let mtxt = "";
+    if (b.current != null && b.costs) {
+      const m = b.current / b.costs;
+      mtxt = m >= 3 ? `Je kunt ${fmt(m)} maanden zonder klus. Een maand later een nieuwe opdracht is dan geen ramp.`
+        : `Goed voor ${fmt(m)} maand${m === 1 ? "" : "en"} zonder klus. Bij drie maanden geeft een gat tussen klussen geen stress meer.`;
+    } else if (b.current != null) mtxt = "Vul je privé maandlasten in, dan zie je hoeveel maanden je zonder klus kunt.";
+    $("bufMonths").textContent = mtxt;
+    $("bufCur").value = b.current ?? ""; $("bufGoal").value = b.goal ?? ""; $("bufCosts").value = b.costs ?? ""; $("payout").value = b.payout ?? "";
+    // planned
+    const open = b.planned.filter(x => !x.paid).sort((x, y) => x.month.localeCompare(y.month)), paid = b.planned.filter(x => x.paid);
+    const ml = mk => { const [y, m] = mk.split("-").map(Number); return `${MONTHS[m - 1]} ${y}`; };
+    $("planList").innerHTML = [...open, ...paid].map(x => {
+      const per = x.amount / monthsUntil(x.month);
+      return `<div class="plan ${x.paid ? "paid" : ""}" data-id="${x.id}">
+        <label style="display:flex;gap:10px;align-items:center;min-width:0"><input type="checkbox" data-pact="paid" ${x.paid ? "checked" : ""} aria-label="Betaald" style="width:18px;height:18px;accent-color:var(--good)"><span style="min-width:0"><span class="t">${esc(x.title)}</span><br><span class="m">${ml(x.month)}${x.paid ? " · betaald" : ""}</span></span></label>
+        <span class="amt">${eur(x.amount)}${x.paid ? "" : `<small>${eur(per)} p/m</small>`}</span>
+        <button type="button" class="xbtn" data-pact="del" aria-label="Verwijderen">×</button></div>`;
+    }).join("") || `<p class="emptyline">Nog geen geplande uitgaven.</p>`;
+    const res = planReserve();
+    $("planTotal").textContent = res ? `${eur(res)} per maand opzij` : "";
+    // ritme
+    const mk = monthKey(new Date()), rm = b.ritme[mk] || {};
+    $("ritmeTitle").textContent = `Maandritme ${MONTHS[new Date().getMonth()]}`;
+    $("ritme").innerHTML = RITME.map(x => `<label><input type="checkbox" data-rk="${x.k}" ${rm[x.k] ? "checked" : ""}>${esc(x.t())}</label>`).join("");
+    const n = RITME.filter(x => rm[x.k]).length;
+    $("ritmeCount").textContent = `${n} van ${RITME.length}`;
+  }
+  $("bufSave").addEventListener("click", () => {
+    const b = buf(), cur = parseEur($("bufCur").value), goal = parseEur($("bufGoal").value), costs = parseEur($("bufCosts").value);
+    if (cur != null && cur !== b.current) { b.current = cur; b.updatedAt = new Date().toISOString(); const mk = monthKey(new Date()); (b.ritme[mk] ||= {}).buffer = true; }
+    if (goal) b.goal = goal; b.costs = costs;
+    $("bufStatus").textContent = persist() ? "Bijgewerkt." : "Bewaren lukte niet."; renderBuffer();
+  });
+  $("planAdd").addEventListener("click", () => {
+    const t = $("planTitle").value.trim(), a = parseEur($("planAmt").value), m = $("planMonth").value;
+    if (!t || !a || !m) { $("planStatus").textContent = "Vul wat, bedrag en maand in."; return; }
+    buf().planned.push({ id: uid(), title: t, amount: a, month: m, paid: false });
+    $("planTitle").value = ""; $("planAmt").value = ""; $("planStatus").textContent = persist() ? "Toegevoegd." : "Bewaren lukte niet."; renderBuffer();
+  });
+  $("planList").addEventListener("click", e => {
+    const el = e.target.closest("[data-pact]"); if (!el) return; const id = el.closest(".plan").dataset.id, b = buf();
+    if (el.dataset.pact === "paid") { const x = b.planned.find(p => p.id === id); x.paid = el.checked; }
+    if (el.dataset.pact === "del") b.planned = b.planned.filter(p => p.id !== id);
+    persist(); renderBuffer();
+  });
+  $("ritme").addEventListener("change", e => {
+    const k = e.target.dataset.rk; if (!k) return; const mk = monthKey(new Date()), b = buf();
+    (b.ritme[mk] ||= {})[k] = e.target.checked; persist(); renderBuffer();
+  });
+  $("payout").addEventListener("change", () => { buf().payout = parseEur($("payout").value); persist(); renderBuffer(); });
+
   function renderFocus() {
     $("newPillar").innerHTML = PILLARS.map(p => `<option value="${p.id}">${p.full}</option>`).join("");
     if (ui.newPillar) $("newPillar").value = ui.newPillar;
@@ -779,6 +924,7 @@ details.donelist > summary { cursor: pointer; padding: 6px 2px; color: var(--fg-
     $("tasksLater").innerHTML = later.length ? later.map(taskHtml).join("") : `<p class="emptyline">Niets voor later. Zet het ster-icoon uit om iets hierheen te verplaatsen.</p>`;
     $("tasksDone").innerHTML = done.length ? done.map(taskHtml).join("") : `<p class="emptyline">Nog niets afgevinkt.</p>`;
     $("doneSummary").textContent = `Gedaan (${done.length})`;
+    renderBuffer();
     ui.justDone = null;
   }
   function taskHtml(t) {
@@ -997,7 +1143,9 @@ details.donelist > summary { cursor: pointer; padding: 6px 2px; color: var(--fg-
   window.addEventListener("storage", e => { if (e.key === KEY) { load(); route(); } });
 
   $("weekline").textContent = `Week ${weekNum(nowWeek)} · ${weekRange(nowWeek)}`;
-  load(); showNotice(); route();
+  load(); showNotice();
+  { const d = new Date(); d.setMonth(d.getMonth() + 1); $("planMonth").value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`; }
+  route();
   if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
 })();
 </script>
