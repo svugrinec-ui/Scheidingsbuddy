@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Mijn Levensbalans</title>
+<title>Scheidingsbuddy</title>
 <meta name="description" content="Wekelijkse check-in, focuslijst en trends voor relatie, wonen, werk en gezondheid.">
 <meta name="theme-color" content="#1f4f54">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Levensbalans">
+<meta name="apple-mobile-web-app-title" content="Scheidingsbuddy">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -303,7 +303,7 @@ input[type="month"] { font: inherit; font-size: 16px; color: var(--fg); backgrou
 
 <div class="wrap">
   <header class="top">
-    <h1>Mijn Levensbalans</h1>
+    <h1>Scheidingsbuddy</h1>
     <span class="weekline" id="weekline"></span>
   </header>
   <div id="storeNotice" class="notice" hidden></div>
@@ -1106,11 +1106,11 @@ input[type="month"] { font: inherit; font-size: 16px; color: var(--fg); backgrou
 
   // ---------- backup ----------
   $("exportBtn").addEventListener("click", async () => {
-    const name = `levensbalans-${new Date().toISOString().slice(0, 10)}.json`;
+    const name = `scheidingsbuddy-${new Date().toISOString().slice(0, 10)}.json`;
     const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
     try {
       const file = new File([blob], name, { type: "application/json" });
-      if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: "Levensbalans back-up" }); $("backupStatus").textContent = "Back-up gedeeld."; return; }
+      if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: "Scheidingsbuddy back-up" }); $("backupStatus").textContent = "Back-up gedeeld."; return; }
     } catch (e) { if (e && e.name === "AbortError") return; }
     const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove();
     $("backupStatus").textContent = `Back-up opgeslagen als ${name}.`;
@@ -1122,7 +1122,7 @@ input[type="month"] { font: inherit; font-size: 16px; color: var(--fg); backgrou
       if (!d || typeof d !== "object" || !d.checkins || !Array.isArray(d.tasks)) throw new Error();
       state = { checkins: {}, reflections: {}, tasks: [], ...d, seeded: true }; persist(); ui.draft = null;
       $("backupStatus").textContent = `Teruggezet: ${Object.keys(state.checkins).length} check-ins en ${state.tasks.length} taken.`;
-    } catch { $("backupStatus").textContent = "Dit bestand is geen Levensbalans-back-up."; }
+    } catch { $("backupStatus").textContent = "Dit bestand is geen Scheidingsbuddy-back-up."; }
     $("importFile").value = "";
   });
 

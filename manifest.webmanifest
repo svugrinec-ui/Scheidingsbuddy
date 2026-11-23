@@ -1,7 +1,7 @@
 {
-  "name": "Mijn Levensbalans",
-  "short_name": "Levensbalans",
-  "description": "Wekelijkse check-in, focuslijst en trends voor relatie, wonen, werk en gezondheid.",
+  "name": "Scheidingsbuddy",
+  "short_name": "Scheidingsbuddy",
+  "description": "Je buddy door de scheiding: wekelijkse check-in, focuslijst en trends voor relatie, wonen, werk en gezondheid.",
   "lang": "nl",
   "start_url": "./",
   "scope": "./",
