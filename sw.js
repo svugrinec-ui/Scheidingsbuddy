@@ -1,5 +1,5 @@
 // Offline support: app shell cache-first, fonts cached as they load.
-const CACHE = "scheidingsbuddy-v4";
+const CACHE = "scheidingsbuddy-v5";
 const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];
 
 self.addEventListener("install", (e) => {

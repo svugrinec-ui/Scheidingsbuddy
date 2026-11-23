@@ -286,6 +286,12 @@ input[type="month"] { font: inherit; font-size: 16px; color: var(--fg); backgrou
 .ritme { display: grid; gap: 4px; }
 .ritme label { display: flex; gap: 10px; align-items: center; padding: 6px 0; font-size: 0.92rem; }
 .ritme input { width: 20px; height: 20px; accent-color: var(--good); }
+.nbas { display: grid; gap: 10px; }
+.nba { border-radius: 14px; padding: 12px 14px; display: grid; gap: 8px; background: color-mix(in srgb, var(--pc) var(--tint), var(--surface)); }
+.nba .why { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; font-size: 0.8rem; color: var(--fg-2); }
+.nba .act { font-weight: 600; overflow-wrap: anywhere; }
+.nba textarea { font-weight: 600; min-height: 0; resize: none; }
+.nba .actions .btn { padding: 8px 14px; }
 .motto { text-align: center; font-family: var(--font-display); font-size: 0.95rem; color: var(--fg-3); padding: 6px 12px; }
 </style>
 </head>
@@ -374,6 +380,10 @@ input[type="month"] { font: inherit; font-size: 16px; color: var(--fg); backgrou
           <p class="small muted" id="calmText"></p>
         </div>
       </div>
+    </div>
+    <div class="panel" id="nbaPanel" hidden>
+      <div class="chart-head"><h2>Vraagt nu aandacht</h2><span class="small muted">uit je laatste check-in</span></div>
+      <div class="nbas" id="nbaList"></div>
     </div>
     <div class="panel">
       <div class="addrow">
@@ -519,25 +529,25 @@ input[type="month"] { font: inherit; font-size: 16px; color: var(--fg); backgrou
 (() => {
   const PILLARS = [
     { id: "relatie", name: "Relatie", full: "Relatie & verbinding", items: [
-      { id: "kinderen", name: "Kinderen", hint: "Tijd, contact en band met de kinderen", q: "Hoe goed is mijn band met de kinderen nu?" },
-      { id: "coouder", name: "Co-ouderschap", hint: "Samenwerking en afspraken met Samara", q: "Hoe soepel lopen de afspraken met Samara?" },
-      { id: "scheiding", name: "Afwikkeling scheiding", hint: "Mediation, verdeling, papierwerk", q: "Hoeveel grip heb ik op de afwikkeling van de scheiding?" },
-      { id: "naasten", name: "Familie & vrienden", hint: "Steun en mensen om je heen", q: "Hoe gesteund voel ik me door familie en vrienden?" } ] },
+      { id: "kinderen", name: "Kinderen", hint: "Tijd, contact en band met de kinderen", q: "Hoe goed is mijn band met de kinderen nu?", nba: "Plan deze week een vast moment alleen met de kinderen" },
+      { id: "coouder", name: "Co-ouderschap", hint: "Samenwerking en afspraken met Samara", q: "Hoe soepel lopen de afspraken met Samara?", nba: "Plan een kort, zakelijk overleg met Samara over de planning" },
+      { id: "scheiding", name: "Afwikkeling scheiding", hint: "Mediation, verdeling, papierwerk", q: "Hoeveel grip heb ik op de afwikkeling van de scheiding?", nba: "Zet de volgende stap richting de mediator op papier" },
+      { id: "naasten", name: "Familie & vrienden", hint: "Steun en mensen om je heen", q: "Hoe gesteund voel ik me door familie en vrienden?", nba: "Bel of spreek af met iemand die je steunt" } ] },
     { id: "wonen", name: "Wonen", full: "Wonen & leefomgeving", items: [
-      { id: "zekerheid", name: "Woonzekerheid", hint: "Nieuwe woning, huur of koop", q: "Hoe zeker ben ik van mijn volgende woning?" },
-      { id: "rusthuis", name: "Rust in huis", hint: "Spanning in de huidige woonsituatie", q: "Hoeveel rust heb ik thuis?" },
-      { id: "thuisgevoel", name: "Thuisgevoel & comfort", hint: "Ook voor de kinderen", q: "Hoe thuis voelen de kinderen en ik ons waar we nu wonen?" },
-      { id: "omgeving", name: "Fijne woonomgeving", hint: "Soest, buurt, natuur, voorzieningen", q: "Hoe prettig vind ik mijn woonomgeving?" } ] },
+      { id: "zekerheid", name: "Woonzekerheid", hint: "Nieuwe woning, huur of koop", q: "Hoe zeker ben ik van mijn volgende woning?", nba: "Zet de volgende stap voor je woning (bezichtiging, hypotheekadviseur)" },
+      { id: "rusthuis", name: "Rust in huis", hint: "Spanning in de huidige woonsituatie", q: "Hoeveel rust heb ik thuis?", nba: "Maak één afspraak thuis die rust geeft" },
+      { id: "thuisgevoel", name: "Thuisgevoel & comfort", hint: "Ook voor de kinderen", q: "Hoe thuis voelen de kinderen en ik ons waar we nu wonen?", nba: "Regel één ding dat het thuis fijner maakt voor de kinderen" },
+      { id: "omgeving", name: "Fijne woonomgeving", hint: "Soest, buurt, natuur, voorzieningen", q: "Hoe prettig vind ik mijn woonomgeving?", nba: "Loop een rondje door de buurt waar je naartoe wilt" } ] },
     { id: "werk", name: "Werk", full: "Werk & financiën", items: [
-      { id: "plezier", name: "Werkplezier & uitdaging", hint: "Energie uit je werk", q: "Hoeveel energie geeft mijn werk me?" },
-      { id: "opdrachten", name: "Opdrachten & pipeline", hint: "Freelanceklussen, nieuwe klanten", q: "Hoe zeker is mijn werk voor de komende maanden?" },
-      { id: "inkomen", name: "Inkomen & buffer", hint: "Stabiliteit, spaargeld, reserves", q: "Hoeveel financiële rust heb ik?" },
-      { id: "vrijheid", name: "Vrijheid & autonomie", hint: "Eigen regie over je tijd en keuzes", q: "Hoeveel regie heb ik over mijn tijd en keuzes?" } ] },
+      { id: "plezier", name: "Werkplezier & uitdaging", hint: "Energie uit je werk", q: "Hoeveel energie geeft mijn werk me?", nba: "Plan een blok voor werk waar je energie van krijgt" },
+      { id: "opdrachten", name: "Opdrachten & pipeline", hint: "Freelanceklussen, nieuwe klanten", q: "Hoe zeker is mijn werk voor de komende maanden?", nba: "Stuur twee mensen uit je netwerk een bericht over een nieuwe klus" },
+      { id: "inkomen", name: "Inkomen & buffer", hint: "Stabiliteit, spaargeld, reserves", q: "Hoeveel financiële rust heb ik?", nba: "Werk je bufferstand en geplande uitgaven bij" },
+      { id: "vrijheid", name: "Vrijheid & autonomie", hint: "Eigen regie over je tijd en keuzes", q: "Hoeveel regie heb ik over mijn tijd en keuzes?", nba: "Blok een middag in je agenda voor jezelf" } ] },
     { id: "gezondheid", name: "Gezondheid", full: "Gezondheid", items: [
-      { id: "fysiek", name: "Fysieke gezondheid", hint: "Conditie, klachten, vitaliteit", q: "Hoe fit voel ik me?" },
-      { id: "mentaal", name: "Mentale rust", hint: "Stress, piekeren, veerkracht", q: "Hoe rustig is het in mijn hoofd?" },
-      { id: "slaap", name: "Energie & slaap", hint: "Rust, herstel, fit zijn", q: "Hoe goed slaap en herstel ik?" },
-      { id: "leefstijl", name: "Leefstijl & beweging", hint: "Voeding, sport, gewoontes", q: "Hoe goed zorg ik voor mezelf met eten, bewegen en drinken?" } ] },
+      { id: "fysiek", name: "Fysieke gezondheid", hint: "Conditie, klachten, vitaliteit", q: "Hoe fit voel ik me?", nba: "Zet twee keer bewegen in je agenda" },
+      { id: "mentaal", name: "Mentale rust", hint: "Stress, piekeren, veerkracht", q: "Hoe rustig is het in mijn hoofd?", nba: "Schrijf op wat je hoofd bezighoudt en regel er één ding van" },
+      { id: "slaap", name: "Energie & slaap", hint: "Rust, herstel, fit zijn", q: "Hoe goed slaap en herstel ik?", nba: "Ga twee avonden deze week vóór 23:00 naar bed" },
+      { id: "leefstijl", name: "Leefstijl & beweging", hint: "Voeding, sport, gewoontes", q: "Hoe goed zorg ik voor mezelf met eten, bewegen en drinken?", nba: "Kies één gewoonte om deze week op te letten" } ] },
   ];
   const ALL_ITEMS = PILLARS.flatMap(p => p.items.map(i => ({ ...i, pillar: p.id })));
   const P = id => PILLARS.find(p => p.id === id);
@@ -755,6 +765,7 @@ input[type="month"] { font: inherit; font-size: 16px; color: var(--fg); backgrou
         const st = t.steps || [], d = st.filter(x => x.done).length;
         return `<div class="note" style="grid-template-columns:minmax(0,1fr) auto;align-items:center"><span style="font-weight:600;overflow-wrap:anywhere">${esc(t.title)}</span>${chip(t.pillar)}${st.length ? `<span class="small muted">${d} van ${st.length} stappen gedaan</span>` : ""}</div>`;
       }).join("")}</div>` : `<p class="small muted">Niets op je lijst voor nu.</p>`}
+      ${(() => { const n = needsAttention(); return n.length ? `<a class="small" href="#focus" style="color:var(--warn);font-weight:600;text-decoration:none">${n.length} onderde${n.length === 1 ? "el vraagt" : "len vragen"} aandacht: ${n.map(x => esc(x.it.name)).join(", ")} →</a>` : ""; })()}
       ${bufferSummary() ? `<p class="small">${bufferSummary()}</p>` : ""}
       <p class="small muted">${doneWeek ? `${doneWeek} ding${doneWeek === 1 ? "" : "en"} afgerond deze week. ` : ""}${open.length - now.length ? `${open.length - now.length} voor later.` : ""}</p>`;
   }
@@ -925,7 +936,7 @@ input[type="month"] { font: inherit; font-size: 16px; color: var(--fg); backgrou
     $("tasksLater").innerHTML = later.length ? later.map(taskHtml).join("") : `<p class="emptyline">Niets voor later. Zet het ster-icoon uit om iets hierheen te verplaatsen.</p>`;
     $("tasksDone").innerHTML = done.length ? done.map(taskHtml).join("") : `<p class="emptyline">Nog niets afgevinkt.</p>`;
     $("doneSummary").textContent = `Gedaan (${done.length})`;
-    renderBuffer();
+    renderBuffer(); renderNba();
     ui.justDone = null;
   }
   function taskHtml(t) {
@@ -951,6 +962,40 @@ input[type="month"] { font: inherit; font-size: 16px; color: var(--fg); backgrou
       </div>` : ""}
     </div>`;
   }
+  // Next best actions: items from the latest check-in that need attention and have no open task yet.
+  function needsAttention() {
+    const S = series(); if (!S.length) return [];
+    const latest = S[S.length - 1], dis = (state.dismissed || {})[nowWeek] || {};
+    const out = [];
+    ALL_ITEMS.forEach(it => {
+      if (dis[it.id] || state.tasks.some(t => !t.done && t.item === it.id)) return;
+      const v = itemVal(latest, it.id); if (v == null) return;
+      const vals = S.map(c => itemVal(c, it.id)), why = []; let prio = 0;
+      if (trend(vals) === -1) { why.push("daalt al vier weken"); prio += 3; }
+      if (S.length >= 3 && S.slice(-3).every(c => c.scores?.[it.id]?.r === "down")) { why.push("je verwacht al drie keer dat het slechter wordt"); prio += 3; }
+      else if (latest.scores?.[it.id]?.r === "down") { why.push("je verwacht dat het slechter wordt"); prio += 1; }
+      if (v <= 4) { why.push(`staat op een ${fmt(v).replace(",0", "")}`); prio += 2; }
+      else if (v <= 5) { why.push(`staat op een ${fmt(v).replace(",0", "")}`); prio += 1; }
+      if (prio >= 2) out.push({ it, v, why, prio });
+    });
+    return out.sort((a, b) => b.prio - a.prio || a.v - b.v).slice(0, 3);
+  }
+  function renderNba() {
+    const list = needsAttention();
+    $("nbaPanel").hidden = !list.length;
+    $("nbaList").innerHTML = list.map(x => `<div class="nba" style="--pc:var(--p-${x.it.pillar})" data-item="${x.it.id}">
+      <div class="why">${chip(x.it.pillar)}<b>${esc(x.it.name)}</b><span>${esc(x.why.join(" en "))}</span></div>
+      <textarea rows="2" aria-label="Actie voor ${esc(x.it.name)}">${esc(x.it.nba)}</textarea>
+      <div class="actions"><button type="button" class="btn" data-nba="add">Op mijn lijst voor nu</button><button type="button" class="linkbtn" data-nba="skip">Deze week niet</button></div>
+    </div>`).join("");
+  }
+  $("nbaList").addEventListener("click", e => {
+    const b = e.target.closest("[data-nba]"); if (!b) return;
+    const box = b.closest(".nba"), id = box.dataset.item, it = ALL_ITEMS.find(x => x.id === id);
+    if (b.dataset.nba === "add") { const t = box.querySelector("textarea").value.trim() || it.nba; addTask(t, it.pillar, true); state.tasks[0].item = id; persist(); }
+    else { state.dismissed ||= {}; (state.dismissed[nowWeek] ||= {})[id] = true; persist(); }
+    renderFocus();
+  });
   function addTask(title, pillar, now) {
     title = title.trim(); if (!title) return false;
     state.tasks.unshift({ id: uid(), title, pillar, now, done: false, createdAt: new Date().toISOString(), steps: [], note: "" });
