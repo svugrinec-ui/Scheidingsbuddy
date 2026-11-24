@@ -574,7 +574,7 @@ input[type="month"] { font: inherit; font-size: 16px; color: var(--fg); backgrou
       </div>
       <span class="status" id="backupStatus" role="status"></span>
     </div>
-    <p class="small muted" style="text-align:center">Versie 14</p>
+    <p class="small muted" style="text-align:center">Versie 15</p>
   </section>
 </div>
 
@@ -753,7 +753,7 @@ input[type="month"] { font: inherit; font-size: 16px; color: var(--fg); backgrou
   const LIMB = { relatie: { j: [405, 310], t: [165, 210], w: 38 }, werk: { j: [595, 310], t: [835, 212], w: 38 },
                  wonen: { j: [445, 560], t: [282, 878], w: 52 }, gezondheid: { j: [555, 560], t: [718, 878], w: 52 } };
   function quarters(el, ci, tot, prev) {
-    const W = 1000, Hd = 1000, CX = 500, CY = 497, R = 455, pad = 60, H = Hd + 400, INK = "currentColor", SANG = "#b5502e", SERIF = "'Cormorant Garamond', Georgia, serif";
+    const W = 1000, Hd = 1000, CX = 500, CY = 497, R = 455, pad = 60, H = Hd + 560, INK = "currentColor", SANG = "#b5502e", SERIF = "'Cormorant Garamond', Georgia, serif";
     const lerp = (a, b, f) => [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f], k = gid++;
     const glow = (id, col, halo, sd, g) => `<filter id="${id}" x="-10%" y="-10%" width="120%" height="120%"><feFlood flood-color="${col}"/><feComposite in2="SourceAlpha" operator="in" result="line"/><feFlood flood-color="${halo}"/><feComposite in2="SourceAlpha" operator="in" result="h"/><feGaussianBlur in="h" stdDeviation="${sd}" result="b1"/><feGaussianBlur in="h" stdDeviation="${sd / 3}" result="b2"/><feComponentTransfer in="b1" result="b1o"><feFuncA type="linear" slope="${g * 1.6}"/></feComponentTransfer><feComponentTransfer in="b2" result="b2o"><feFuncA type="linear" slope="${g * .9}"/></feComponentTransfer><feMerge><feMergeNode in="b1o"/><feMergeNode in="b2o"/><feMergeNode in="line"/></feMerge></filter>`;
     let defs = glow(`gl${k}`, "#3a4a5c", "#3a4a5c", 4, .25) + glow(`gd${k}`, "#eaf4ff", "#6fb6ff", 6, .5) + `<filter id="bl${k}" x="-20%" y="-20%" width="140%" height="140%"><feTurbulence type="fractalNoise" baseFrequency=".035" numOctaves="3" seed="5"/><feDisplacementMap in="SourceGraphic" scale="10"/><feGaussianBlur stdDeviation="1.5"/></filter>`;
@@ -771,28 +771,28 @@ input[type="month"] { font: inherit; font-size: 16px; color: var(--fg); backgrou
       const dx = L.t[0] - L.j[0], dy = L.t[1] - L.j[1], l = Math.hypot(dx, dy), nx = -dy / l, ny = dx / l, h = L.w * .85;
       top += `<line x1="${M[0] + nx * h}" y1="${M[1] + ny * h}" x2="${M[0] - nx * h}" y2="${M[1] - ny * h}" stroke="${INK}" stroke-width="3" stroke-dasharray="5 4" stroke-linecap="round"/>`;
       const a = Math.atan2(L.t[1] - CY, L.t[0] - CX), lx = CX + Math.cos(a) * (R + 30), ly = CY + Math.sin(a) * (R + 30), up = Math.sin(a) < 0;
-      top += `<text x="${lx}" y="${ly + (up ? -50 : 26)}" text-anchor="${Math.cos(a) < 0 ? "end" : "start"}" font-family="${SERIF}" font-style="italic" font-weight="600"><tspan font-size="38" fill="${col}">${P(id).name}</tspan><tspan x="${lx}" dy="42" font-size="44" fill="${INK}">${fmt(v)}</tspan></text>`;
+      top += `<text x="${lx}" y="${ly + (up ? -62 : 34)}" text-anchor="${Math.cos(a) < 0 ? "end" : "start"}" font-family="Inter, -apple-system, system-ui, sans-serif" font-weight="700"><tspan font-size="42" fill="${VIVID[id][0]}">${P(id).name}</tspan><tspan x="${lx}" dy="58" font-size="58" font-weight="800" fill="${INK}">${fmt(v)}</tspan></text>`;
     });
-    // columns: left to right in the order of the limbs (left arm, left leg, right leg, right arm)
-    const order = ["relatie", "wonen", "gezondheid", "werk"], cw = 100, y0 = Hd + 50, colTop = y0 + 50, base = y0 + 270, ch = base - colTop;
-    const st = (w, o = 1) => `fill="none" stroke="${INK}" stroke-width="${w}" stroke-opacity="${o}" stroke-linecap="round"`;
-    let cols = `<line x1="30" y1="${base + 14}" x2="970" y2="${base + 14}" ${st(3)}/><line x1="40" y1="${base + 22}" x2="960" y2="${base + 22}" ${st(1.5, .6)}/>`;
-    order.forEach((id, i) => {
-      const x = 140 + i * 240, v = pillarVal(ci, id), pv = prev ? pillarVal(prev, id) : null, col = EARTH[id];
-      if (v != null) { const y = base - ch * v / 10;
-        cols += `<rect x="${x - cw / 2}" y="${y}" width="${cw}" height="${base - y}" fill="${col}" fill-opacity=".42" filter="url(#bl${k})" class="wash"/>`;
-        if (v < MIN_SUPPORT) cols += `<rect x="${x - cw / 2 - 4}" y="${y - 4}" width="${cw + 8}" height="${base - y + 8}" fill="none" stroke="${SANG}" stroke-width="3" stroke-dasharray="26 6"/>`; }
-      cols += `<path d="M${x - cw / 2},${colTop} V${base} M${x + cw / 2},${colTop} V${base}" ${st(2.4)}/>`;
-      for (let q = 1; q < 4; q++) cols += `<line x1="${x - cw / 2 + q * cw / 4}" y1="${colTop + 8}" x2="${x - cw / 2 + q * cw / 4}" y2="${base - 8}" ${st(1, .45)}/>`;
-      cols += `<path d="M${x - cw / 2 - 12},${colTop} h${cw + 24} M${x - cw / 2 - 6},${colTop - 10} h${cw + 12} M${x - cw / 2 - 12},${colTop} q-12,-12 0,-18 M${x + cw / 2 + 12},${colTop} q12,-12 0,-18 M${x - cw / 2 - 10},${base} h${cw + 20} M${x - cw / 2 - 14},${base + 7} h${cw + 28}" ${st(2.2)}/>`;
-      if (pv != null) { const yp = base - ch * pv / 10; cols += `<line x1="${x - cw / 2 - 8}" y1="${yp}" x2="${x + cw / 2 + 8}" y2="${yp}" stroke="${INK}" stroke-width="4" stroke-linecap="round"/>`; }
-      const d = v != null && pv != null ? v - pv : null;
-      cols += `<text x="${x}" y="${colTop - 30}" text-anchor="middle" font-family="${SERIF}" font-style="italic" font-weight="600" font-size="34" fill="${col}">${P(id).name}</text>`;
-      cols += `<text x="${x}" y="${base + 58}" text-anchor="middle" font-family="${SERIF}" font-style="italic" font-weight="600" font-size="40" fill="${INK}">${fmt(v)}${d != null && Math.abs(d) >= 0.05 ? ` <tspan font-size="30" fill="${d > 0 ? "#3d7a3a" : SANG}">${d > 0 ? "+" : "−"}${fmt(Math.abs(d))}</tspan>` : ""}</text>`;
-    });
+    // columns: left to right in the order of the limbs (left arm, left leg, right leg, right arm). Large sans-serif text so it reads on a phone.
+    const SANS = "Inter, -apple-system, system-ui, sans-serif";
+    const order = ["relatie", "wonen", "gezondheid", "werk"], cw = 150, y0 = Hd + 30, colTop = y0 + 80, base = y0 + 330, ch = base - colTop;
+    let cols = "";
     const ym = base - ch * MIN_SUPPORT / 10;
-    cols += `<line x1="40" y1="${ym}" x2="960" y2="${ym}" ${st(2, .75)} stroke-dasharray="8 9"/><text x="30" y="${ym + 8}" text-anchor="end" font-family="${SERIF}" font-style="italic" font-size="24" fill="${INK}">${MIN_SUPPORT}</text>`;
-    const avgTxt = `<text x="${W / 2}" y="${H - 4}" text-anchor="middle" font-family="${SERIF}" font-style="italic" font-size="32" fill="${INK}" fill-opacity=".75">${fmt(tot)} gemiddeld</text>`;
+    order.forEach((id, i) => {
+      const x = 125 + i * 250, v = pillarVal(ci, id), pv = prev ? pillarVal(prev, id) : null, [ca, cb] = VIVID[id], g = `cg${k}${id}`;
+      defs += `<linearGradient id="${g}" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="${ca}"/><stop offset="1" stop-color="${cb}"/></linearGradient>`;
+      cols += `<rect x="${x - cw / 2}" y="${colTop}" width="${cw}" height="${ch}" rx="22" fill="${ca}" fill-opacity=".14"/>`;
+      if (v != null) { const y = base - ch * Math.max(v, 0.3) / 10;
+        cols += `<rect x="${x - cw / 2}" y="${y}" width="${cw}" height="${base - y}" rx="22" fill="url(#${g})"/>`;
+        if (v < MIN_SUPPORT) cols += `<rect x="${x - cw / 2 - 7}" y="${y - 7}" width="${cw + 14}" height="${base - y + 14}" rx="28" fill="none" stroke="#ff9f0a" stroke-width="5"/>`; }
+      if (pv != null) { const yp = base - ch * pv / 10; cols += `<line x1="${x - cw / 2 - 12}" y1="${yp}" x2="${x + cw / 2 + 12}" y2="${yp}" stroke="${INK}" stroke-width="7" stroke-linecap="round"/>`; }
+      const d = v != null && pv != null ? v - pv : null;
+      cols += `<text x="${x}" y="${colTop - 26}" text-anchor="middle" font-family="${SANS}" font-weight="700" font-size="44" fill="${INK}">${P(id).name}</text>`;
+      cols += `<text x="${x}" y="${base + 78}" text-anchor="middle" font-family="${SANS}" font-weight="800" font-size="66" fill="${INK}">${fmt(v)}</text>`;
+      if (d != null && Math.abs(d) >= 0.05) cols += `<text x="${x}" y="${base + 132}" text-anchor="middle" font-family="${SANS}" font-weight="700" font-size="42" fill="${d > 0 ? "#30a14e" : "#e0662f"}">${d > 0 ? "▲ " : "▼ "}${fmt(Math.abs(d))}</text>`;
+    });
+    cols += `<line x1="-30" y1="${ym}" x2="1030" y2="${ym}" stroke="${INK}" stroke-width="4" stroke-opacity=".7" stroke-dasharray="14 12"/>`;
+    const avgTxt = `<text x="${W / 2}" y="${H - 6}" text-anchor="middle" font-family="${SANS}" font-weight="600" font-size="42" fill="${INK}" fill-opacity=".7">${fmt(tot)} gemiddeld · streep = minimum ${MIN_SUPPORT}</text>`;
     el.innerHTML = `<svg viewBox="${-pad} 0 ${W + pad * 2} ${H + 10}" role="img" aria-label="Balans per pilaar: ${PILLARS.map(p => `${p.name} ${fmt(pillarVal(ci, p.id))}`).join(", ")}"><defs>${defs}</defs>${wash}${top}${cols}${avgTxt}</svg>`;
   }
   function miniRing(id, v, bare) {
@@ -1378,7 +1378,7 @@ input[type="month"] { font: inherit; font-size: 16px; color: var(--fg); backgrou
     "Werk je bufferstand en geplande uitgaven bij": "Update your buffer balance and planned expenses", "Zet de volgende stap richting de mediator op papier": "Write down the next step towards the mediator",
     "Zet de volgende stap voor je woning (bezichtiging, hypotheekadviseur)": "Take the next step for your home (viewing, mortgage adviser)", "Zet twee keer bewegen in je agenda": "Put two workouts in your calendar",
     "daalt al vier weken": "has been falling for four weeks", "je verwacht al drie keer dat het slechter wordt": "you've expected it to get worse three times in a row", "je verwacht dat het slechter wordt": "you expect it to get worse",
-    "Scheidingsbuddy back-up": "Scheidingsbuddy backup", "Meer": "More", "Financiële wizard": "Financial wizard", "Je scheiding als DGA doorrekenen": "Work out your divorce as a company owner", "Je gegevens bewaren of terugzetten": "Save or restore your data", "Eerste week": "First week", "Gelijk aan vorige week": "Same as last week", "van 10": "out of 10", "Versie 14": "Version 12", "Weergave: automatisch": "Appearance: automatic", "Weergave: licht": "Appearance: light", "Weergave: donker": "Appearance: dark",
+    "Scheidingsbuddy back-up": "Scheidingsbuddy backup", "Meer": "More", "Financiële wizard": "Financial wizard", "Je scheiding als DGA doorrekenen": "Work out your divorce as a company owner", "Je gegevens bewaren of terugzetten": "Save or restore your data", "Eerste week": "First week", "Gelijk aan vorige week": "Same as last week", "van 10": "out of 10", "Versie 15": "Version 12", "Weergave: automatisch": "Appearance: automatic", "Weergave: licht": "Appearance: light", "Weergave: donker": "Appearance: dark",
   };
   const MONTHS_EN = { jan: "Jan", feb: "Feb", mrt: "Mar", apr: "Apr", mei: "May", jun: "Jun", jul: "Jul", aug: "Aug", sep: "Sep", okt: "Oct", nov: "Nov", dec: "Dec",
     januari: "January", februari: "February", maart: "March", april: "April", juni: "June", juli: "July", augustus: "August", september: "September", oktober: "October", november: "November", december: "December" };
@@ -1395,6 +1395,7 @@ input[type="month"] { font: inherit; font-size: 16px; color: var(--fg); backgrou
     [/^Week (\d+)$/, (m, a) => `Week ${a}`],
     [/^(.+), week (\d+)$/, (m, a, b) => `${trName(a)}, week ${b}`],
     [/^(Relatie|Wonen|Werk|Gezondheid) ([\d,]+|–)$/, (m, a, b) => `${trName(a)} ${b}`],
+    [/^([\d,]+) gemiddeld · streep = minimum (\d+)$/, (m, a, b) => `${a} average · line = minimum ${b}`],
     [/^([\d,]+) gemiddeld$/, (m, a) => `${a} average`],
     [/^([+−][\d,]+) sinds vorige week$/, (m, a) => `${a} since last week`],
     [/^Versie (\d+)$/, (m, a) => `Version ${a}`],
