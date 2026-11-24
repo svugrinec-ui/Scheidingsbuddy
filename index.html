@@ -148,11 +148,17 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 :root[data-theme="dark"] .quarters .vline-l { display: none; } :root[data-theme="dark"] .quarters .vline-d { display: inline; } :root[data-theme="dark"] .quarters .wash { mix-blend-mode: normal; }
 .quarters svg { width: 100%; max-width: 440px; display: block; margin: 0 auto; }
 .balance { grid-template-columns: 1fr !important; }
-.tiles .tile { background: #000 !important; color: #f5f5f7 !important; border-color: #000; }
-.tiles .tile .name, .tiles .tile .big { color: #f5f5f7 !important; }
-.tile .name .ic { color: var(--pc); }
-.tile .sub, .tile .dirs, .tile .big small { color: #98989f !important; }
-.tile .ringrow { display: flex; align-items: center; gap: 10px; }
+.tiles .tile { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 14px 12px 12px; justify-items: center; text-align: center; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,.04); }
+.tiles .tile[aria-expanded="true"] { border-color: var(--pc); box-shadow: 0 0 0 1px var(--pc); }
+.tiles .tile .name { justify-content: center; font-size: .9rem; }
+.ringwrap { position: relative; width: 104px; height: 104px; }
+.ringwrap svg { width: 100%; height: 100%; display: block; }
+.ringnum { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; line-height: 1; }
+.ringnum b { font-family: var(--font-display); font-size: 1.6rem; font-weight: 650; font-variant-numeric: tabular-nums; }
+.ringnum small { font-size: .7rem; color: var(--fg-3); margin-top: 3px; }
+.tchip { font-size: .74rem; font-weight: 600; padding: 2px 8px; border-radius: 99px; background: var(--surface-2); color: var(--fg-2); }
+.tchip.up { background: var(--good-soft); color: var(--good); } .tchip.down { background: var(--warn-soft); color: var(--warn); }
+.tiles .tile svg.spark { height: 26px; }
 .mring { width: 64px; height: 64px; flex: none; }
 .mring svg use { stroke: currentColor; }
 .plist .row .sub { display: block; font-size: 0.74rem; color: var(--fg-3); }
@@ -552,6 +558,7 @@ input[type="month"] { font: inherit; font-size: 16px; color: var(--fg); backgrou
       </div>
       <span class="status" id="backupStatus" role="status"></span>
     </div>
+    <p class="small muted" style="text-align:center">Versie 12</p>
   </section>
 </div>
 
@@ -733,8 +740,10 @@ input[type="month"] { font: inherit; font-size: 16px; color: var(--fg); backgrou
       const v = pillarVal(ci, id), M = lerp(L.j, L.t, MIN_SUPPORT / 10), col = EARTH[id];
       if (v != null) {
         const E = lerp(L.j, L.t, Math.max(v, 0.5) / 10), g = `lw${k}${id}`;
-        defs += `<linearGradient id="${g}" gradientUnits="userSpaceOnUse" x1="${L.j[0]}" y1="${L.j[1]}" x2="${E[0]}" y2="${E[1]}"><stop offset="0" stop-color="${col}" stop-opacity=".18"/><stop offset="1" stop-color="${col}" stop-opacity=".62"/></linearGradient>`;
-        wash += `<line x1="${L.j[0]}" y1="${L.j[1]}" x2="${E[0]}" y2="${E[1]}" stroke="url(#${g})" stroke-width="${L.w}" stroke-linecap="round" filter="url(#bl${k})" class="wash"/>`;
+        defs += `<linearGradient id="${g}" gradientUnits="userSpaceOnUse" x1="${L.j[0]}" y1="${L.j[1]}" x2="${E[0]}" y2="${E[1]}"><stop offset="0" stop-color="${col}" stop-opacity=".35"/><stop offset="1" stop-color="${col}" stop-opacity=".7"/></linearGradient>`;
+        defs += `<mask id="lm${k}${id}" maskUnits="userSpaceOnUse" x="0" y="0" width="${W}" height="${Hd}"><image href="mask-${id}.png" x="0" y="0" width="${W}" height="${Hd}"/></mask>`;
+        // the limb's own shape (traced from the drawing), faint to the circle, filled to the score
+        wash += `<g mask="url(#lm${k}${id})" class="wash"><line x1="${L.j[0]}" y1="${L.j[1]}" x2="${L.t[0]}" y2="${L.t[1]}" stroke="${col}" stroke-opacity=".12" stroke-width="${L.w * 3}"/><line x1="${L.j[0]}" y1="${L.j[1]}" x2="${E[0]}" y2="${E[1]}" stroke="url(#${g})" stroke-width="${L.w * 3}"/></g>`;
         if (v < MIN_SUPPORT) top += `<circle cx="${E[0]}" cy="${E[1]}" r="${L.w * .9}" fill="none" stroke="${SANG}" stroke-width="3" stroke-dasharray="26 6"/>`;
       }
       const dx = L.t[0] - L.j[0], dy = L.t[1] - L.j[1], l = Math.hypot(dx, dy), nx = -dy / l, ny = dx / l, h = L.w * .85;
@@ -764,13 +773,13 @@ input[type="month"] { font: inherit; font-size: 16px; color: var(--fg); backgrou
     const avgTxt = `<text x="${W / 2}" y="${H - 4}" text-anchor="middle" font-family="${SERIF}" font-style="italic" font-size="32" fill="${INK}" fill-opacity=".75">${fmt(tot)} gemiddeld</text>`;
     el.innerHTML = `<svg viewBox="${-pad} 0 ${W + pad * 2} ${H + 10}" role="img" aria-label="Balans per pilaar: ${PILLARS.map(p => `${p.name} ${fmt(pillarVal(ci, p.id))}`).join(", ")}"><defs>${defs}</defs>${wash}${top}${cols}${avgTxt}</svg>`;
   }
-  function miniRing(id, v) {
-    const r = 36, w = 13, c = 2 * Math.PI * r, f = Math.max(0, Math.min(1, (v || 0) / 10)), gidr = "rg" + (gid++), [a, b] = VIVID[id];
+  function miniRing(id, v, bare) {
+    const r = bare ? 40 : 36, w = bare ? 10 : 13, c = 2 * Math.PI * r, f = Math.max(0, Math.min(1, (v || 0) / 10)), gidr = "rg" + (gid++), [a, b] = VIVID[id];
     const ang = (f * 360 - 90) * Math.PI / 180, ex = 50 + Math.cos(ang) * r, ey = 50 + Math.sin(ang) * r;
     return `<svg class="mring" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="${gidr}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs>
       <circle cx="50" cy="50" r="${r}" fill="none" stroke="${a}" stroke-opacity=".22" stroke-width="${w}"/>
       ${v != null ? `<circle cx="50" cy="50" r="${r}" fill="none" stroke="url(#${gidr})" stroke-width="${w}" stroke-linecap="round" stroke-dasharray="${(c * f).toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 50 50)"/><circle cx="${ex}" cy="${ey}" r="${w / 2}" fill="${b}"/>` : ""}
-      <svg x="39" y="39" width="22" height="22" viewBox="0 0 24 24" style="color:${b}"><use href="#i-${id}"/></svg></svg>`;
+      ${bare ? "" : `<svg x="39" y="39" width="22" height="22" viewBox="0 0 24 24" style="color:${b}"><use href="#i-${id}"/></svg>`}</svg>`;
   }
   function radar(el, cur, prev) {
     const S = 300, c = S / 2, R = 110, n = 4, ang = i => -Math.PI / 2 + i * 2 * Math.PI / n;
@@ -870,14 +879,15 @@ input[type="month"] { font: inherit; font-size: 16px; color: var(--fg); backgrou
 
     // tiles
     const view = ui.range === "12" ? S.slice(-12) : S;
-    $("tiles").innerHTML = PILLARS.map(p => {
-      const pv = pillarVal(latest, p.id);
-      const dirs = p.items.map(i => latest.scores?.[i.id]?.r).filter(Boolean), cnt = { up: 0, flat: 0, down: 0 }; dirs.forEach(d => cnt[d]++);
-      return `<button type="button" class="tile" style="--pc:var(--p-${p.id})" data-p="${p.id}" aria-expanded="${ui.openPillar === p.id}">
+    // same order as the columns under the figure: left arm, left leg, right leg, right arm
+    $("tiles").innerHTML = ["relatie", "wonen", "gezondheid", "werk"].map(P).map(p => {
+      const pv = pillarVal(latest, p.id), ppv = prev ? pillarVal(prev, p.id) : null, d = pv != null && ppv != null ? pv - ppv : null;
+      const chip = d == null ? `<span class="tchip">Eerste week</span>` : Math.abs(d) < 0.05 ? `<span class="tchip">Gelijk aan vorige week</span>` : `<span class="tchip ${d > 0 ? "up" : "down"}">${d > 0 ? "+" : "−"}${fmt(Math.abs(d))} sinds vorige week</span>`;
+      return `<button type="button" class="tile" style="--pc:${VIVID[p.id][0]}" data-p="${p.id}" aria-expanded="${ui.openPillar === p.id}">
         <span class="name">${icon(p.id)}${p.name}</span>
-        <span class="ringrow">${miniRing(p.id, pv)}<span class="big num">${fmt(pv)}<small>/10</small></span></span>
-        ${sparkline(view.map(c => pillarVal(c, p.id)), pc(p.id))}
-        <span class="dirs">${dirs.length ? `${cnt.up}× ↑ · ${cnt.flat}× → · ${cnt.down}× ↓` : "Geen richting ingevuld"}</span>
+        <span class="ringwrap">${miniRing(p.id, pv, true)}<span class="ringnum"><b>${fmt(pv)}</b><small>van 10</small></span></span>
+        ${chip}
+        ${sparkline(view.map(c => pillarVal(c, p.id)), VIVID[p.id][0])}
       </button>`;
     }).join("");
     $("tiles").querySelectorAll(".tile").forEach(b => b.addEventListener("click", () => { ui.openPillar = ui.openPillar === b.dataset.p ? null : b.dataset.p; renderOverview(); }));
@@ -1346,7 +1356,7 @@ input[type="month"] { font: inherit; font-size: 16px; color: var(--fg); backgrou
     "Werk je bufferstand en geplande uitgaven bij": "Update your buffer balance and planned expenses", "Zet de volgende stap richting de mediator op papier": "Write down the next step towards the mediator",
     "Zet de volgende stap voor je woning (bezichtiging, hypotheekadviseur)": "Take the next step for your home (viewing, mortgage adviser)", "Zet twee keer bewegen in je agenda": "Put two workouts in your calendar",
     "daalt al vier weken": "has been falling for four weeks", "je verwacht al drie keer dat het slechter wordt": "you've expected it to get worse three times in a row", "je verwacht dat het slechter wordt": "you expect it to get worse",
-    "Scheidingsbuddy back-up": "Scheidingsbuddy backup", "Weergave: automatisch": "Appearance: automatic", "Weergave: licht": "Appearance: light", "Weergave: donker": "Appearance: dark",
+    "Scheidingsbuddy back-up": "Scheidingsbuddy backup", "Eerste week": "First week", "Gelijk aan vorige week": "Same as last week", "van 10": "out of 10", "Versie 12": "Version 12", "Weergave: automatisch": "Appearance: automatic", "Weergave: licht": "Appearance: light", "Weergave: donker": "Appearance: dark",
   };
   const MONTHS_EN = { jan: "Jan", feb: "Feb", mrt: "Mar", apr: "Apr", mei: "May", jun: "Jun", jul: "Jul", aug: "Aug", sep: "Sep", okt: "Oct", nov: "Nov", dec: "Dec",
     januari: "January", februari: "February", maart: "March", april: "April", juni: "June", juli: "July", augustus: "August", september: "September", oktober: "October", november: "November", december: "December" };
@@ -1364,6 +1374,7 @@ input[type="month"] { font: inherit; font-size: 16px; color: var(--fg); backgrou
     [/^(.+), week (\d+)$/, (m, a, b) => `${trName(a)}, week ${b}`],
     [/^(Relatie|Wonen|Werk|Gezondheid) ([\d,]+|–)$/, (m, a, b) => `${trName(a)} ${b}`],
     [/^([\d,]+) gemiddeld$/, (m, a) => `${a} average`],
+    [/^([+−][\d,]+) sinds vorige week$/, (m, a) => `${a} since last week`],
     [/^Vorige keer: (.+)$/, (m, a) => `Last time: ${a}`],
     [/^Eerstvolgende stap: (.+)$/, (m, a) => `Next step: ${a}`],
     [/^: daalt al vier weken, van ([\d,]+) naar ([\d,]+)\.$/, (m, a, b) => `: has been falling for four weeks, from ${a} to ${b}.`],
