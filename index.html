@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Scheidingsbuddy</title>
 <meta name="description" content="Wekelijkse check-in, focuslijst en trends voor relatie, wonen, werk en gezondheid.">
-<meta name="theme-color" content="#1f4f54">
+<meta name="theme-color" content="#121518">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -18,24 +18,24 @@
 <style>
 /* Layout: one calm column (max 720px), bottom tab bar like a phone app, summary before detail. */
 :root {
-  --bg: #f3f5f6;
+  --bg: #f4f2ee;
   --surface: #ffffff;
-  --surface-2: #e8eef0;
-  --line: #d6dde0;
-  --fg: #172126;
-  --fg-2: #4b5a61;
-  --fg-3: #6f7f87;
-  --accent: #1f6f74;
+  --surface-2: #ebe8e2;
+  --line: #ddd8cf;
+  --fg: #1f2326;
+  --fg-2: #50575c;
+  --fg-3: #737a7f;
+  --accent: #4f6680;
   --accent-ink: #ffffff;
-  --accent-soft: #dcecec;
+  --accent-soft: #e4e9ef;
   --warn: #8f5300;
   --warn-soft: #fbefd9;
   --good: #23743a;
   --good-soft: #e1f1e4;
-  --p-relatie: #eb6834;
-  --p-wonen: #1baf7a;
-  --p-werk: #2a78d6;
-  --p-gezondheid: #eda100;
+  --p-relatie: #b5726f;
+  --p-wonen: #6f8d69;
+  --p-werk: #62799a;
+  --p-gezondheid: #b0925f;
   --tint: 13%;
   --font-display: "Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
   --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -45,21 +45,21 @@
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #10161a; --surface: #182126; --surface-2: #212c31; --line: #2e3a40;
-    --fg: #e8eef0; --fg-2: #b3c0c5; --fg-3: #8a9aa3;
-    --accent: #6fb8bb; --accent-ink: #0f2224; --accent-soft: #1d3436;
+    --bg: #121518; --surface: #1b2024; --surface-2: #242a2f; --line: #30373c;
+    --fg: #e9e6e1; --fg-2: #bab6af; --fg-3: #8f9396;
+    --accent: #a3b6cb; --accent-ink: #121518; --accent-soft: #252e37;
     --warn: #e9b155; --warn-soft: #3a2c14; --good: #74c98a; --good-soft: #1b3322;
-    --p-relatie: #d95926; --p-wonen: #199e70; --p-werk: #3987e5; --p-gezondheid: #c98500;
+    --p-relatie: #c98b8b; --p-wonen: #8fa889; --p-werk: #7d93ad; --p-gezondheid: #cdb48a;
     --tint: 20%;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-    --bg: #10161a; --surface: #182126; --surface-2: #212c31; --line: #2e3a40;
-    --fg: #e8eef0; --fg-2: #b3c0c5; --fg-3: #8a9aa3;
-    --accent: #6fb8bb; --accent-ink: #0f2224; --accent-soft: #1d3436;
+    --bg: #121518; --surface: #1b2024; --surface-2: #242a2f; --line: #30373c;
+    --fg: #e9e6e1; --fg-2: #bab6af; --fg-3: #8f9396;
+    --accent: #a3b6cb; --accent-ink: #121518; --accent-soft: #252e37;
     --warn: #e9b155; --warn-soft: #3a2c14; --good: #74c98a; --good-soft: #1b3322;
-    --p-relatie: #d95926; --p-wonen: #199e70; --p-werk: #3987e5; --p-gezondheid: #c98500;
+    --p-relatie: #c98b8b; --p-wonen: #8fa889; --p-werk: #7d93ad; --p-gezondheid: #cdb48a;
     --tint: 20%;
     color-scheme: dark;
 }
@@ -574,7 +574,7 @@ input[type="month"] { font: inherit; font-size: 16px; color: var(--fg); backgrou
       </div>
       <span class="status" id="backupStatus" role="status"></span>
     </div>
-    <p class="small muted" style="text-align:center">Versie 17</p>
+    <p class="small muted" style="text-align:center">Versie 18</p>
   </section>
 </div>
 
@@ -743,20 +743,23 @@ input[type="month"] { font: inherit; font-size: 16px; color: var(--fg); backgrou
     return `<svg class="${cls}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true"><path d="${d}" fill="none" stroke="${color}" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/><circle cx="${X(l[0])}" cy="${Y(l[1])}" r="2.6" fill="${color}"/></svg>`;
   }
   // One circle in four quarters; each quarter fills clockwise from 0 to 100% (a 10).
-  // Vivid Apple-style gradient per pillar, used by the figure and the ring tiles.
-  const VIVID = { relatie: ["#ff3b5c", "#ff8a5c"], wonen: ["#12d18e", "#8cf7c8"], werk: ["#1e7bff", "#6fd0ff"], gezondheid: ["#ffb000", "#ffe766"] };
+  // Nordic palette per pillar (old rose, slate blue, sage, sand), used by the figure, columns and ring tiles. Deeper stops on a light page for contrast.
+  const NORDIC_L = { relatie: ["#b5726f", "#d9a29d"], wonen: ["#6f8d69", "#a9c1a2"], werk: ["#62799a", "#9fb2c8"], gezondheid: ["#b0925f", "#dcc79f"] };
+  const NORDIC_D = { relatie: ["#c98b8b", "#e0aaa6"], wonen: ["#8fa889", "#b2c6ab"], werk: ["#7d93ad", "#a3b6cb"], gezondheid: ["#cdb48a", "#e2cfa9"] };
+  const isDark = () => { const t = document.documentElement.dataset.theme; return t ? t === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches; };
+  const VIVID = new Proxy({}, { get: (_, k) => (isDark() ? NORDIC_D : NORDIC_L)[k] });
   const MIN_SUPPORT = 5;
   let gid = 0;
   // Vitruvian figure: arms are Relatie and Werk, legs Wonen and Gezondheid. A limb touching the circle is a 10; the dashed line is the minimum.
   // Line drawing of Leonardo's Vitruvian man (vitruvius-lijn.png, 1000x1000 space), pillar washes on the raised arms and spread legs, four columns underneath.
-  const EARTH = { relatie: "#b0402a", wonen: "#3f7d55", werk: "#35598c", gezondheid: "#c08a22" };
+  const EARTH = { relatie: "#b5726f", wonen: "#6f8d69", werk: "#62799a", gezondheid: "#b0925f" };
   const LIMB = { relatie: { j: [405, 310], t: [165, 210], w: 38 }, werk: { j: [595, 310], t: [835, 212], w: 38 },
                  wonen: { j: [445, 560], t: [282, 878], w: 52 }, gezondheid: { j: [555, 560], t: [718, 878], w: 52 } };
   function quarters(el, ci, tot, prev) {
     const W = 1000, Hd = 1000, CX = 500, CY = 497, R = 455, pad = 60, H = Hd + 560, INK = "currentColor", SANG = "#b5502e", SERIF = "'Cormorant Garamond', Georgia, serif";
     const lerp = (a, b, f) => [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f], k = gid++;
     const glow = (id, col, halo, sd, g) => `<filter id="${id}" x="-10%" y="-10%" width="120%" height="120%"><feFlood flood-color="${col}"/><feComposite in2="SourceAlpha" operator="in" result="line"/><feFlood flood-color="${halo}"/><feComposite in2="SourceAlpha" operator="in" result="h"/><feGaussianBlur in="h" stdDeviation="${sd}" result="b1"/><feGaussianBlur in="h" stdDeviation="${sd / 3}" result="b2"/><feComponentTransfer in="b1" result="b1o"><feFuncA type="linear" slope="${g * 1.6}"/></feComponentTransfer><feComponentTransfer in="b2" result="b2o"><feFuncA type="linear" slope="${g * .9}"/></feComponentTransfer><feMerge><feMergeNode in="b1o"/><feMergeNode in="b2o"/><feMergeNode in="line"/></feMerge></filter>`;
-    let defs = glow(`gl${k}`, "#3a4a5c", "#3a4a5c", 4, .25) + glow(`gd${k}`, "#eaf4ff", "#6fb6ff", 6, .5) + `<filter id="bl${k}" x="-20%" y="-20%" width="140%" height="140%"><feTurbulence type="fractalNoise" baseFrequency=".035" numOctaves="3" seed="5"/><feDisplacementMap in="SourceGraphic" scale="10"/><feGaussianBlur stdDeviation="1.5"/></filter>`;
+    let defs = glow(`gl${k}`, "#3d454c", "#3d454c", 4, .25) + glow(`gd${k}`, "#f1eee9", "#a3b6cb", 6, .45) + `<filter id="bl${k}" x="-20%" y="-20%" width="140%" height="140%"><feTurbulence type="fractalNoise" baseFrequency=".035" numOctaves="3" seed="5"/><feDisplacementMap in="SourceGraphic" scale="10"/><feGaussianBlur stdDeviation="1.5"/></filter>`;
     let wash = `<image class="vline-l" href="vitruvius-lijn.png" x="0" y="0" width="${W}" height="${Hd}" filter="url(#gl${k})"/><image class="vline-d" href="vitruvius-lijn.png" x="0" y="0" width="${W}" height="${Hd}" filter="url(#gd${k})"/>`, top = "";
     Object.entries(LIMB).forEach(([id, L]) => {
       const v = pillarVal(ci, id), M = lerp(L.j, L.t, MIN_SUPPORT / 10), col = EARTH[id];
@@ -1378,7 +1381,7 @@ input[type="month"] { font: inherit; font-size: 16px; color: var(--fg); backgrou
     "Werk je bufferstand en geplande uitgaven bij": "Update your buffer balance and planned expenses", "Zet de volgende stap richting de mediator op papier": "Write down the next step towards the mediator",
     "Zet de volgende stap voor je woning (bezichtiging, hypotheekadviseur)": "Take the next step for your home (viewing, mortgage adviser)", "Zet twee keer bewegen in je agenda": "Put two workouts in your calendar",
     "daalt al vier weken": "has been falling for four weeks", "je verwacht al drie keer dat het slechter wordt": "you've expected it to get worse three times in a row", "je verwacht dat het slechter wordt": "you expect it to get worse",
-    "Scheidingsbuddy back-up": "Scheidingsbuddy backup", "Meer": "More", "Financiële wizard": "Financial wizard", "Je scheiding als DGA doorrekenen": "Work out your divorce as a company owner", "Je gegevens bewaren of terugzetten": "Save or restore your data", "Eerste week": "First week", "Gelijk aan vorige week": "Same as last week", "van 10": "out of 10", "Versie 16": "Version 12", "Weergave: automatisch": "Appearance: automatic", "Weergave: licht": "Appearance: light", "Weergave: donker": "Appearance: dark",
+    "Scheidingsbuddy back-up": "Scheidingsbuddy backup", "Meer": "More", "Financiële wizard": "Financial wizard", "Je scheiding als DGA doorrekenen": "Work out your divorce as a company owner", "Je gegevens bewaren of terugzetten": "Save or restore your data", "Eerste week": "First week", "Gelijk aan vorige week": "Same as last week", "van 10": "out of 10", "Versie 18": "Version 18", "Weergave: automatisch": "Appearance: automatic", "Weergave: licht": "Appearance: light", "Weergave: donker": "Appearance: dark",
   };
   const MONTHS_EN = { jan: "Jan", feb: "Feb", mrt: "Mar", apr: "Apr", mei: "May", jun: "Jun", jul: "Jul", aug: "Aug", sep: "Sep", okt: "Oct", nov: "Nov", dec: "Dec",
     januari: "January", februari: "February", maart: "March", april: "April", juni: "June", juli: "July", augustus: "August", september: "September", oktober: "October", november: "November", december: "December" };
