@@ -125,7 +125,8 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 .plist .row { display: flex; justify-content: space-between; gap: 8px; align-items: center; font-size: 0.88rem; }
 .quarters { background: transparent; color: var(--fg); padding: 4px 0 6px; }
 .quarters .wash { mix-blend-mode: multiply; }
-@media (prefers-color-scheme: dark) { .quarters .vline { filter: invert(1) brightness(.92); } .quarters .wash { mix-blend-mode: normal; } }
+.quarters .vline-d { display: none; }
+@media (prefers-color-scheme: dark) { .quarters .vline-l { display: none; } .quarters .vline-d { display: inline; } .quarters .wash { mix-blend-mode: normal; } }
 .quarters svg { width: 100%; max-width: 440px; display: block; margin: 0 auto; }
 .balance { grid-template-columns: 1fr !important; }
 .tiles .tile { background: #000 !important; color: #f5f5f7 !important; border-color: #000; }
@@ -699,8 +700,9 @@ input[type="month"] { font: inherit; font-size: 16px; color: var(--fg); backgrou
   function quarters(el, ci, tot, prev) {
     const W = 1000, Hd = 1000, CX = 500, CY = 497, R = 455, pad = 60, H = Hd + 400, INK = "currentColor", SANG = "#b5502e", SERIF = "'Cormorant Garamond', Georgia, serif";
     const lerp = (a, b, f) => [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f], k = gid++;
-    let defs = `<filter id="bl${k}" x="-20%" y="-20%" width="140%" height="140%"><feTurbulence type="fractalNoise" baseFrequency=".035" numOctaves="3" seed="5"/><feDisplacementMap in="SourceGraphic" scale="10"/><feGaussianBlur stdDeviation="1.5"/></filter>`;
-    let wash = `<image class="vline" href="vitruvius-lijn.png" x="0" y="0" width="${W}" height="${Hd}"/>`, top = "";
+    const glow = (id, col, sd, g) => `<filter id="${id}" x="-10%" y="-10%" width="120%" height="120%"><feFlood flood-color="${col}"/><feComposite in2="SourceAlpha" operator="in" result="line"/><feGaussianBlur in="line" stdDeviation="${sd}" result="b1"/><feGaussianBlur in="line" stdDeviation="${sd / 3}" result="b2"/><feComponentTransfer in="b1" result="b1o"><feFuncA type="linear" slope="${g * 1.6}"/></feComponentTransfer><feComponentTransfer in="b2" result="b2o"><feFuncA type="linear" slope="${g * .9}"/></feComponentTransfer><feMerge><feMergeNode in="b1o"/><feMergeNode in="b2o"/><feMergeNode in="line"/></feMerge></filter>`;
+    let defs = glow(`gl${k}`, "#1f6f74", 4, .3) + glow(`gd${k}`, "#6fe0d2", 6, .45) + `<filter id="bl${k}" x="-20%" y="-20%" width="140%" height="140%"><feTurbulence type="fractalNoise" baseFrequency=".035" numOctaves="3" seed="5"/><feDisplacementMap in="SourceGraphic" scale="10"/><feGaussianBlur stdDeviation="1.5"/></filter>`;
+    let wash = `<image class="vline-l" href="vitruvius-lijn.png" x="0" y="0" width="${W}" height="${Hd}" filter="url(#gl${k})"/><image class="vline-d" href="vitruvius-lijn.png" x="0" y="0" width="${W}" height="${Hd}" filter="url(#gd${k})"/>`, top = "";
     Object.entries(LIMB).forEach(([id, L]) => {
       const v = pillarVal(ci, id), M = lerp(L.j, L.t, MIN_SUPPORT / 10), col = EARTH[id];
       if (v != null) {
