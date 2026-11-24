@@ -4,5 +4,5 @@
 // Leeg = inloggen staat uit en de app werkt zoals voorheen.
 window.SB_AUTH = {
   url: "https://xcljqutfxhhsluvbzqsa.supabase.co",// Supabase → Project Settings → API → Project URL, bv. "https://abcd1234.supabase.co"
-  anonKey: "",    // Supabase → Project Settings → API Keys → publishable (of anon public) key
+  anonKey: "sb_publishable_ZV7CMiBW45NQJj09v9liIg_AZcaDoHf",// Supabase → Project Settings → API Keys → publishable (of anon public) key
 };
