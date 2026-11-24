@@ -1,0 +1,802 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Financiële wizard · Scheidingsbuddy</title>
+<script>try{const t=localStorage.getItem('sb-theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: stappenlijst links, invoer + berekening in het midden, live overzicht rechts; op telefoon alles onder elkaar */
+:root{
+  --bg:#f3f6f7; --surface:#ffffff; --ink:#15212a; --muted:#596a76; --line:#d9e1e6;
+  --accent:#1d5c74; --accent-ink:#ffffff; --accent-soft:#e2eef3;
+  --good:#2b7a4b; --good-soft:#e3f2e9; --warn:#9a6208; --warn-soft:#fbf0dc; --bad:#b03636; --bad-soft:#f8e4e4;
+  --sans:"Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e161b; --surface:#16212a; --ink:#e4ecf0; --muted:#93a5b1; --line:#283843;
+  --accent:#72b6d2; --accent-ink:#0b1a21; --accent-soft:#1a3441;
+  --good:#6cc591; --good-soft:#173326; --warn:#e3ab4f; --warn-soft:#3a2c12; --bad:#ee8080; --bad-soft:#3d1d1f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e161b; --surface:#16212a; --ink:#e4ecf0; --muted:#93a5b1; --line:#283843;
+  --accent:#72b6d2; --accent-ink:#0b1a21; --accent-soft:#1a3441;
+  --good:#6cc591; --good-soft:#173326; --warn:#e3ab4f; --warn-soft:#3a2c12; --bad:#ee8080; --bad-soft:#3d1d1f; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5}
+.wrap{max-width:1320px;margin:0 auto;padding-block:24px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px;margin-bottom:20px}
+h1{font-size:26px;font-weight:800;letter-spacing:-.01em;margin:0;text-wrap:balance}
+.sub{color:var(--muted);margin:4px 0 0;max-width:68ch}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;padding:5px 10px;border-radius:999px;background:var(--warn-soft);color:var(--warn)}
+.grid{display:grid;grid-template-columns:210px minmax(0,1fr) 300px;gap:24px;align-items:start}
+nav.steps{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);display:flex;flex-direction:column;gap:2px}
+nav.steps button{all:unset;cursor:pointer;display:flex;gap:10px;align-items:center;padding:9px 10px;border-radius:8px;color:var(--muted);font-weight:500}
+nav.steps button .n{font-family:var(--mono);font-size:12px;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--line);flex:none}
+nav.steps button:hover{background:var(--surface);color:var(--ink)}
+nav.steps button[aria-current="step"]{background:var(--surface);color:var(--ink);font-weight:700;box-shadow:0 0 0 1px var(--line)}
+nav.steps button[aria-current="step"] .n{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+nav.steps button:focus-visible,.btn:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+main{min-width:0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:24px}
+.panel h2{font-size:21px;margin:0 0 4px;font-weight:800;text-wrap:balance}
+.intro{color:var(--muted);margin:0 0 20px;max-width:70ch}
+.fields{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:16px 20px}
+.group-title{grid-column:1/-1;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-top:6px;padding-top:12px;border-top:1px solid var(--line)}
+.group-title:first-child{border-top:0;padding-top:0;margin-top:0}
+.f{display:flex;flex-direction:column;gap:5px;min-width:0}
+.f label{font-weight:600;font-size:14px}
+.inp{display:flex;align-items:center;border:1px solid var(--line);border-radius:8px;background:var(--bg);overflow:hidden}
+.inp:focus-within{border-color:var(--accent)}
+.inp span{padding:0 10px;color:var(--muted);font-family:var(--mono);font-size:13px}
+.inp input,.inp select{all:unset;flex:1;min-width:0;padding:9px 10px;font-family:var(--mono);font-size:14px;font-variant-numeric:tabular-nums}
+.inp select{font-family:var(--sans);cursor:pointer}
+.inp:has(span:first-child) input{padding-left:0}
+.f .help{font-size:12.5px;color:var(--muted)}
+.f.check{flex-direction:row;align-items:flex-start;gap:10px}
+.f.check input{margin-top:3px;width:18px;height:18px;accent-color:var(--accent);flex:none}
+.f.check label{font-weight:500}
+.calc{margin-top:24px;padding-top:20px;border-top:1px dashed var(--line)}
+.calc h3{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+.tbl-wrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+td:first-child{min-width:170px}
+table.wide{min-width:640px}
+td.num,th.num{text-align:right;font-family:var(--mono);white-space:nowrap}
+tr.total td{font-weight:700;border-top:2px solid var(--ink);border-bottom:0}
+tr.sub td{color:var(--muted)}
+.neg{color:var(--bad)} .pos{color:var(--good)}
+.note{font-size:13px;color:var(--muted);margin:10px 0 0;max-width:75ch}
+.callouts{display:flex;flex-direction:column;gap:8px;margin-top:16px}
+.co{border-radius:8px;padding:10px 12px;font-size:14px;border-left:4px solid var(--accent);background:var(--accent-soft)}
+.co.warn{border-color:var(--warn);background:var(--warn-soft)}
+.co.bad{border-color:var(--bad);background:var(--bad-soft)}
+.co.good{border-color:var(--good);background:var(--good-soft)}
+.co b{font-weight:700}
+.nav-btns{display:flex;justify-content:space-between;gap:12px;margin-top:24px;flex-wrap:wrap}
+.btn{all:unset;cursor:pointer;padding:10px 16px;border-radius:8px;font-weight:600;border:1px solid var(--line);background:var(--surface);color:var(--ink);text-align:center}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn:hover{filter:brightness(1.05)}
+aside.live{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);display:flex;flex-direction:column;gap:14px}
+.live .panel{padding:18px}
+.live h3{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+.kv{display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-bottom:1px solid var(--line);font-size:14px}
+.kv:last-child{border-bottom:0}
+.kv b{font-family:var(--mono);font-weight:600;white-space:nowrap;font-variant-numeric:tabular-nums}
+.bars{display:flex;flex-direction:column;gap:8px}
+.bar{display:grid;grid-template-columns:1fr auto;gap:2px 8px;font-size:13px}
+.bar .track{grid-column:1/-1;height:8px;border-radius:4px;background:var(--bg);position:relative;overflow:hidden}
+.bar .fill{position:absolute;top:0;bottom:0;border-radius:4px}
+.bar b{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.chart svg{width:100%;height:auto;display:block}
+.sumhead{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:8px}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.sec{margin-top:28px}
+.sec h3{font-size:16px;margin:0 0 10px;font-weight:800}
+table.budget input,table.budget select{font:inherit;font-size:13.5px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 8px;width:100%;min-width:0}
+table.budget input.n{font-family:var(--mono);text-align:right;width:96px}
+table.budget input.p{width:64px;margin-right:4px}
+table.budget td{padding:5px 6px;vertical-align:middle}
+table.budget{min-width:780px}
+table.budget td:first-child{min-width:230px}
+table.budget td:nth-child(2){min-width:170px}
+table.budget .del{all:unset;cursor:pointer;color:var(--muted);font-size:18px;padding:0 6px;border-radius:4px}
+table.budget .del:hover,table.budget .del:focus-visible{color:var(--bad);outline:2px solid var(--accent)}
+textarea.copy{width:100%;min-height:200px;font-family:var(--mono);font-size:12.5px;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:10px}
+.toast{font-size:13px;color:var(--good);font-weight:600;align-self:center}
+ol.q{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;max-width:80ch}
+.disc{font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:12px;margin-top:28px;max-width:85ch}
+@media (max-width:1100px){
+  .grid{grid-template-columns:190px minmax(0,1fr)}
+  aside.live{grid-column:1/-1;position:static;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+}
+@media (max-width:760px){
+  .grid{grid-template-columns:minmax(0,1fr)}
+  nav.steps{position:static;flex-direction:row;overflow-x:auto;gap:4px;padding-bottom:4px}
+  nav.steps button{white-space:nowrap}
+  .panel{padding:18px}
+}
+@media (prefers-reduced-motion:no-preference){.bar .fill{transition:width .25s ease,left .25s ease}}
+.sbback{display:inline-block;margin:0 0 10px;padding:8px 14px;border-radius:999px;background:var(--surface);border:1px solid var(--line);color:var(--accent);font-weight:600;text-decoration:none;font-size:.9rem}
+body{padding-top:env(safe-area-inset-top,0px)}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="sbback" href="./#overzicht">‹ Scheidingsbuddy</a>
+<header class="top">
+    <div>
+      <h1>Scheidingswizard DGA</h1>
+      <p class="sub">Rekenhulp voor een DGA in scheiding: inkomen uit de bv, privé-cashflow, woning, rekening-courant en alimentatie in één overzicht, als voorbereiding op het gesprek met de mediator.</p>
+    </div>
+    <span class="chip">Indicatief, geen fiscaal of juridisch advies</span>
+  </header>
+  <div class="grid">
+    <nav class="steps" id="steps" aria-label="Stappen"></nav>
+    <main><div class="panel" id="panel"></div></main>
+    <aside class="live" id="live"></aside>
+  </div>
+</div>
+
+<script>
+const DEFAULTS={
+  tarief:0,uren:40,weken:48,omzetBasis:'handmatig',omzetHand:0,fee:0,kosten:0,hLoonheffing:0,hLoon:0,hLoonEx:0,hKosten:0,opname2:0,opname2Koppel:true,verbouwing:0,verbMnd:1,rcGrens:500000,model:20,autoVerkoop:false,autoBijtel:0,autoLease:0,autoBvKosten:0,autoPrive:0,autoRest:0,autoWaarde:0,
+  vpbModus:'handmatig',vpbHand:0,vpbT1:19,vpbGrens:200000,vpbT2:25.8,opname:0,opnameType:'rc',
+  salaris:0,exInkomen:0,hypBruto:0,hra:0,hypAflos:0,hypAandeel:100,studie:0,renteHolding:0,privAflos:0,privMnd:0,birdnest:0,leef:0,budgetAan:true,
+  waardeL:0,waardeH:0,hyp:0,vk:0,aandeel:50,privRest:0,privGem:true,studieRest:0,studieGem:false,
+  rc:0,lening:0,bank:0,activa:0,bvSchuld:0,latent:false,divBruto:0,divAantal:0,divPerJaar:1,rcRente:0.5,planOp2:false,divBel:15,b2grens:68843,b2laag:24.5,b2hoog:31,b2res:false,
+  partner:0,partnerMnd:0,kind:0,kindKosten:0,aftrek:true,aftrekT:37.56,alimMode:'berekend',ngiBasis:'loon',kostenKindHand:0,kgbEx:0,zorgPct:35,exNu:0,exVerdien:0,opbouwMnd:0,nbiBasis:'loon',bvWinstMee:0,woonNa:0,forfait:0,kidsVast:0
+};
+const KEY='sb-wizard-v1';
+const CATS=['Wonen','Zorg & verzekeringen','Vervoer','Abonnementen','Boodschappen','Extra\'s','Kleding','Overig'];
+const BUDGET=[
+ ['Energie (gas/elektra)',0,'Wonen',100],['Water',0,'Wonen',100],['Woonverzekering',0,'Wonen',100],['Gemeentelijke belastingen',0,'Wonen',100],
+ ['Zorgverzekering',0,'Zorg & verzekeringen',50],['Arbeidsongeschiktheidsverzekering',0,'Zorg & verzekeringen',100],
+ ['Autoverzekering',0,'Vervoer',100],['Wegenbelasting',0,'Vervoer',100],['Brandstof',0,'Vervoer',100],
+ ['Abonnementen',0,'Abonnementen',100],
+ ['Boodschappen',0,'Boodschappen',50],
+ ['Onvoorzien',0,'Extra\'s',50],
+ ['Kleding',0,'Kleding',50],['Kleedgeld kinderen',0,'Kleding',50]
+].map(([naam,bedrag,cat,pct])=>({naam,bedrag,cat,pct}));
+DEFAULTS.budget=BUDGET;
+let S={...DEFAULTS};
+try{const raw=localStorage.getItem(KEY);if(raw){const sv=JSON.parse(raw);S={...DEFAULTS,...sv};}}catch(e){}
+if(!Array.isArray(S.budget)||S.budget===BUDGET)S.budget=BUDGET.map(x=>({...x}));
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+
+const fmt=new Intl.NumberFormat('nl-NL',{maximumFractionDigits:0});
+const eur=v=>(v<0?'−':'')+'€'+fmt.format(Math.abs(Math.round(v)));
+const eurS=v=>(v>0?'+':'')+eur(v);
+const pct=v=>new Intl.NumberFormat('nl-NL',{maximumFractionDigits:2}).format(v)+'%';
+const cls=v=>v<0?'neg':'';
+
+/* ---------- Stappen en velden ---------- */
+const STEPS=[
+ {id:'bv',t:'Inkomen & bv',intro:'De omzet komt binnen in de werkmaatschappij. Die betaalt een managementfee aan je holding, en de holding betaalt je DGA-loon. Wat je daarnaast privé opneemt via de rekening-courant, verhoogt je rc-schuld. Wat daarna overblijft, gaat eerst naar de verbouwing en daarna naar een buffer.',fields:[
+  {g:'Omzet'},
+  {id:'tarief',l:'Uurtarief',u:'€'},
+  {id:'uren',l:'Declarabele uren per week',u:'uur'},
+  {id:'weken',l:'Declarabele weken per jaar',u:'wk'},
+  {id:'omzetBasis',l:'Reken met maandomzet',type:'select',opts:[['berekend','Berekend uit uurtarief'],['handmatig','Zelf invullen']]},
+  {id:'omzetHand',l:'Maandomzet (handmatig)',u:'€',show:()=>S.omzetBasis==='handmatig',h:'Gemiddelde van 2024 (€19.793) en 2025 (€18.912) volgens de VPB-aangiftes, inclusief extra uren. November 2026: €19.890.'},
+  {g:'Werkmaatschappij (per maand)'},
+  {id:'fee',l:'Managementfee naar holding',u:'€'},
+  {id:'kosten',l:'Zakelijke kosten',u:'€',h:'Werkelijke kosten 2025 volgens de VPB-aangifte (€29.803 per jaar), inclusief auto en lease.'},
+  {id:'vpbModus',l:'VPB',type:'select',opts:[['handmatig','Eigen schatting'],['berekend','Berekenen met tarieven']]},
+  {id:'vpbHand',l:'VPB per maand (schatting)',u:'€',show:()=>S.vpbModus==='handmatig'},
+  {id:'vpbT1',l:'VPB-tarief laag',u:'%',show:()=>S.vpbModus==='berekend'},
+  {id:'vpbGrens',l:'Grens laag tarief (jaarwinst)',u:'€',show:()=>S.vpbModus==='berekend'},
+  {id:'vpbT2',l:'VPB-tarief hoog',u:'%',show:()=>S.vpbModus==='berekend'},
+  {g:'Holding (per maand)'},
+  {id:'hLoonheffing',l:'Loonheffing + Zvw op DGA-loon',u:'€',h:'Loonstrook okt. 2026: €3.447,92 loonheffing + €320,94 Zvw. Inclusief bijtelling auto.'},
+  {id:'hLoon',l:'Netto DGA-loon (uitbetaald)',u:'€',h:'Loonstrook okt. 2026, incl. €178,89 onkostenvergoeding.'},
+  {id:'hLoonEx',l:'Salaris ex-partner (in dienst holding)',u:'€',h:'Netto, 10 uur per week als administratief medewerker.'},
+  {id:'hKosten',l:'Overige kosten holding',u:'€',h:'Werkelijke kosten 2025 volgens de VPB-aangifte (€5.222 per jaar).'},
+  {g:'Opnames naar privé (per maand, vanaf januari)'},
+  {id:'opname',l:'Aanvulling privé',u:'€'},
+  {id:'opname2',l:'Extra voor privéschulden',u:'€',h:'Vanaf januari, voor de aflossing van studie- en privéschuld.'},
+  {id:'opname2Koppel',l:'Extra opname daalt als de privéschuld is afgelost',type:'check'},
+  {id:'opnameType',l:'Fiscale behandeling opnames',type:'select',opts:[['rc','Lening via rekening-courant'],['dividend','Dividend (bruto opgehoogd)'],['onbekend','Nog onbekend']],h:'Via de rekening-courant loopt je rc-schuld op.'},
+  {g:'Bestemming restant'},
+  {id:'verbouwing',l:'Naar verbouwing / privé per maand',u:'€',h:'Bijvoorbeeld de schilder. Gaat via de rc, dus je rc-schuld stijgt mee. Daarna gaat het restant naar de buffer.'},
+  {g:'Auto (scenario)'},
+  {id:'autoVerkoop',l:'BMW iX3 verkopen en vervangen door een goedkopere auto privé',type:'check',h:'Rekenscenario. Zet aan om te zien wat verkopen doet met je netto inkomen, de bv en de buffer.'},
+  {id:'autoBijtel',l:'Bijtelling die vervalt (netto per maand)',u:'€',show:()=>S.autoVerkoop,h:'Je netto salaris stijgt met dit bedrag, de loonheffing daalt evenveel.'},
+  {id:'autoLease',l:'Financial lease die vervalt',u:'€',show:()=>S.autoVerkoop,h:'BMW Financial Services, €476,59 per maand tot september 2030.'},
+  {id:'autoBvKosten',l:'Overige autokosten bv die vervallen',u:'€',show:()=>S.autoVerkoop,h:'Verzekering €122 + wegenbelasting €102 + laden €350, min de kilometervergoeding die de bv straks betaalt (20.000 km × €0,23 = €383 per maand).'},
+  {id:'autoPrive',l:'Kosten vervangende auto privé',u:'€',show:()=>S.autoVerkoop,h:'Gebruikte auto van ca. €25.000 via financiering (ca. €500), plus verzekering, wegenbelasting, laden en onderhoud (ca. €540), min de onbelaste kilometervergoeding van €383.'},
+  {id:'autoRest',l:'Restschuld lease bij verkoop',u:'€',show:()=>S.autoVerkoop,h:'Aflossing lease bij verkoop, ca. €28.000.'},
+  {id:'autoWaarde',l:'Verkoopopbrengst bv (excl. btw)',u:'€',show:()=>S.autoVerkoop,h:'Ca. €40.000 inclusief btw, dus ca. €33.058 exclusief. Na de lease blijft ca. €5.000 in de bv.'},
+  {id:'verbMnd',l:'Aantal maanden verbouwing',u:'mnd',h:'Gerekend vanaf januari.'}
+ ]},
+ {id:'prive',t:'Privé-cashflow',intro:'Wat er privé binnenkomt en vastligt aan lasten. Alimentatie vul je in bij stap 5. De huishoudbegroting staat onderaan: per post zie je wat het huishouden nu kost en welk deel na de scheiding bij jou blijft.',fields:[
+  {g:'Inkomsten'},
+  {id:'salaris',l:'Netto DGA-salaris',u:'€',h:'Volgens je begroting. De opnames komen uit stap 1.'},
+  {id:'exInkomen',l:'Netto inkomen ex-partner (nu)',u:'€',h:'Haar salaris van je holding. Telt alleen mee in het scenario Nu.'},
+  {g:'Woning'},
+  {id:'hypBruto',l:'Hypotheek bruto per maand',u:'€'},
+  {id:'hra',l:'Voorlopige teruggave hypotheekrente',u:'€',h:'Staat in de cashflow aan de inkomstenkant.'},
+  {id:'hypAflos',l:'Waarvan aflossing (in netto last)',u:'€',h:'Alleen ter informatie: dit deel bouwt vermogen op.'},
+  {id:'hypAandeel',l:'Jouw aandeel in de woonlast',u:'%',h:'Tijdens birdnesting betaal je nu 100%.'},
+  {id:'birdnest',l:'Extra woonlasten birdnesting',u:'€',h:'Bijvoorbeeld een tweede woonruimte.'},
+  {g:'Schulden'},
+  {id:'studie',l:'Aflossing studieschuld',u:'€'},
+  {id:'renteHolding',l:'Rente aan de holding (contant betaald)',u:'€',h:'De boekhouder schrijft de rente (ca. 2%) bij op de rc; die staat daarom in het dividendplan (stap 4). Vul hier alleen iets in als je rente echt contant betaalt.'},
+  {id:'privAflos',l:'Aflossing privéschuld',u:'€'},
+  {id:'privMnd',l:'Resterende looptijd privéschuld',u:'mnd'},
+  {g:'Huishoudbegroting'},
+  {id:'budgetAan',l:'Neem de huishoudbegroting mee in de scenario\'s',type:'check',h:'Uitvinken toont de bedragen vóór overige leefkosten, zoals in je eerste overzicht.'},
+  {custom:'budget'},
+  {id:'leef',l:'Overige leefkosten na scheiding (bovenop begroting)',u:'€',h:'Bijvoorbeeld huur van eigen woonruimte of nieuwe abonnementen.'}
+ ]},
+ {id:'woning',t:'Woning & vermogen',intro:'Overwaarde van de woning en overige bezittingen en schulden die in de gemeenschap kunnen vallen. Jullie zijn in 2019 getrouwd zonder huwelijkse voorwaarden, dus in beginsel geldt de beperkte gemeenschap van goederen.',fields:[
+  {g:'Woning'},
+  {id:'waardeL',l:'Woningwaarde (laag)',u:'€'},
+  {id:'waardeH',l:'Woningwaarde (hoog)',u:'€'},
+  {id:'hyp',l:'Openstaande hypotheek',u:'€',h:'ING, november 2026: deel 1 (juli 2023, oorspronkelijk €782.400, rente ca. 4,4%) nog €739.095; deel 2 (maart 2025, oorspronkelijk €58.500, ca. 3,5%) nog €56.701.'},
+  {id:'vk',l:'Verkoopkosten',u:'%',h:'Makelaar, notaris e.d. Vaak 1 à 2%. Op 0 = zoals in jouw overzicht.'},
+  {id:'aandeel',l:'Jouw aandeel in de verdeling',u:'%'},
+  {g:'Overige schulden'},
+  {id:'privRest',l:'Restant privéschuld',u:'€',h:'Lening ouders: medio 2027 ca. €9.000. Wordt bij de verkoop van het huis afgelost.'},
+  {id:'privGem',l:'Privéschuld is een gemeenschapsschuld',type:'check',h:'Is de schuld tijdens het huwelijk voor gezamenlijke uitgaven aangegaan?'},
+  {id:'studieRest',l:'Restant studieschuld',u:'€'},
+  {id:'studieGem',l:'Studieschuld valt in de gemeenschap',type:'check',h:'Bij een beperkte gemeenschap blijft een schuld van vóór het huwelijk meestal privé.'}
+ ]},
+ {id:'rc',t:'Rekening-courant & dividend',intro:'Je rc-schuld aan de bv is een schuld van jou én een bezitting van de bv. Bij de verdeling vallen ze tegen elkaar weg als je ze samen waardeert. Het dividendplan rekent per jaar door wat er netto van de schuld afgaat.',fields:[
+  {g:'Bv-balans (indicatief)'},
+  {id:'rc',l:'Jouw schuld aan de holding (lening + rc)',u:'€',h:'Nov. 2026 (schatting): lening €100.000 + rc ca. €195.400. Eind 2025 was het €258.952.'},
+  {id:'bank',l:'Banksaldo bv en holding',u:'€',h:'Per 31-12-2025.'},
+  {id:'activa',l:'Overige bezittingen bv',u:'€',h:'Per 31-12-2025: BMW iX3 en inventaris €44.561, debiteuren en overig €23.259.'},
+  {id:'lening',l:'Waarvan lening holding',u:'€',h:'De lening van augustus 2023. Zit al in het bedrag hierboven. Gebruikt voor de vergelijking: lening aflossen uit de verkoop of wegstrepen met dividend.'},
+  {id:'bvSchuld',l:'Schulden bv',u:'€',h:'Per 31-12-2025: autofinanciering BMW €33.197, crediteuren, btw, VPB en loonheffing.'},
+  {id:'latent',l:'Latente box 2-claim aftrekken van aandelenwaarde',type:'check',h:'Gebruikt het lage box 2-tarief. Of dit wordt meegenomen, is een onderhandelpunt.'},
+  {g:'Dividendplan'},
+  {id:'divBruto',l:'Aflossing rc per tranche',u:'€',h:'Plan: één tranche per jaar van €68.843, precies tot de grens van het 24,5%-tarief voor één persoon. De holding draagt daarbovenop 15% dividendbelasting af (€10.326); het jaar erna volgt een box 2-aanslag privé van €6.540.'},
+  {id:'divAantal',l:'Aantal uitkeringen',u:'×'},
+  {id:'divPerJaar',l:'Uitkeringen per jaar',u:'×'},
+  {id:'rcRente',l:'Rente bijgeschreven op de rc',u:'%',h:'Alleen de lening van €100.000 draagt rente: 1,5% = €1.500 per jaar. Over de totale stand van ca. €295.000 is dat ongeveer 0,5%.'},
+  {id:'planOp2',l:'Extra opname voor privéschulden ook via de rc',type:'check',h:'Uit: na de scheiding betaal je DUO en je ouders uit je salaris, en gaat alleen de aanvulling van €2.000 per maand via de rc.'},
+  {g:'Tarieven (controleer jaarlijks)'},
+  {id:'rcGrens',l:'Grens wet excessief lenen',u:'€',h:'Schulden aan je eigen bv boven deze grens worden belast als inkomen uit aanmerkelijk belang.'},
+  {id:'divBel',l:'Dividendbelasting (voorheffing)',u:'%'},
+  {id:'b2laag',l:'Box 2-tarief laag',u:'%'},
+  {id:'b2grens',l:'Grens box 2-schijf (per persoon)',u:'€'},
+  {id:'b2hoog',l:'Box 2-tarief hoog',u:'%'},
+  {id:'b2res',l:'Reserveer de box 2-aanslag in de maandelijkse cashflow',type:'check'}
+ ]},
+ {id:'alim',t:'Alimentatie',intro:'Een vereenvoudigde berekening volgens de Tremanormen die rechters gebruiken. Eerst de kinderalimentatie, dan de partneralimentatie: wat zij nodig heeft, min wat ze zelf kan verdienen, begrensd door wat jij kunt betalen. Gebruik de knoppen om scenario\'s te vergelijken.',fields:[
+  {id:'alimMode',l:'Bedragen in de scenario\'s',type:'select',opts:[['berekend','Uit de berekening hieronder'],['handmatig','Zelf ingevuld']]},
+  {id:'partner',l:'Partneralimentatie (zelf ingevuld)',u:'€',show:()=>S.alimMode==='handmatig'},
+  {id:'kind',l:'Kinderalimentatie (zelf ingevuld)',u:'€',show:()=>S.alimMode==='handmatig'},
+  {id:'partnerMnd',l:'Looptijd partneralimentatie',u:'mnd',h:'Loopt tot de jongste 12 wordt: 3 juni 2032. Gerekend vanaf inschrijving van de echtscheiding, hier aangenomen april 2027.'},
+  {g:'Gezinsinkomen tijdens het huwelijk'},
+  {id:'ngiBasis',l:'Wat telt als gezinsinkomen',type:'select',opts:[['loon','Lonen + teruggave hypotheekrente'],['loonRc','Ook de rc-opname van €2.000']],h:'Jouw standpunt: de rc-opnames waren leningen, geen inkomen.'},
+  {id:'kostenKindHand',l:'Kosten kinderen (0 = schatting uit tabel)',u:'€',h:'Benadering van de tabel eigen aandeel kosten kinderen. Controleer met de officiële tabel.'},
+  {id:'kgbEx',l:'Kindgebonden budget voor ex (schatting)',u:'€',h:'Gaat af van de kosten van de kinderen.'},
+  {id:'zorgPct',l:'Zorgkorting',u:'%',h:'35% bij 3 of meer dagen zorg per week.'},
+  {g:'Inkomen ex-partner (netto per maand)'},
+  {id:'exNu',l:'Tijdens opbouwperiode',u:'€'},
+  {id:'opbouwMnd',l:'Duur opbouwperiode',u:'mnd'},
+  {id:'exVerdien',l:'Verdiencapaciteit daarna',u:'€',h:'Officemanager/PA, 24 à 32 uur: ca. €2.900 bruto.'},
+  {g:'Jouw draagkracht'},
+  {id:'nbiBasis',l:'Wat telt als jouw inkomen',type:'select',opts:[['loon','Alleen je netto salaris'],['loonRc','Salaris + rc-opnames']]},
+  {id:'bvWinstMee',l:'Extra uit bv-winst dat meetelt',u:'€',h:'Een rechter kan een deel van de ingehouden winst meetellen.'},
+  {id:'woonNa',l:'Jouw woonlast na scheiding (netto)',u:'€',h:'Nu €3.018 tijdens birdnesting. Pas aan voor huur of een eigen woning.'},
+  {id:'forfait',l:'Draagkrachtloos inkomen (bijstandsnorm)',u:'€'},
+  {id:'kidsVast',l:'Vast bedrag in draagkrachtformule kinderen',u:'€',h:'Formule: 70% × (inkomen − (30% × inkomen + dit bedrag)).'},
+  {id:'aftrek',l:'Partneralimentatie aftrekbaar (bruto ophogen)',type:'check'},
+  {id:'aftrekT',l:'Tarief aftrek',u:'%',show:()=>S.aftrek},
+  {g:'Eigen kosten'},
+  {id:'kindKosten',l:'Eigen kinderkosten per maand',u:'€',h:'Bovenop de begroting, tijdens jouw zorgdagen.'}
+ ]},
+ {id:'sum',t:'Samenvatting'}
+];
+let cur=0;
+
+/* ---------- Rekenlogica ---------- */
+function vpbJaar(w){if(w<=0)return 0;return Math.min(w,S.vpbGrens)*S.vpbT1/100+Math.max(0,w-S.vpbGrens)*S.vpbT2/100}
+function box2(x){x=Math.max(0,x);return Math.min(x,S.b2grens)*S.b2laag/100+Math.max(0,x-S.b2grens)*S.b2hoog/100}
+
+function compute(){
+  const s=S,r={};
+  r.jaaromzet=s.tarief*s.uren*s.weken;
+  r.omzetBerekend=r.jaaromzet/12;
+  r.omzet=s.omzetBasis==='handmatig'?s.omzetHand:r.omzetBerekend;
+  const autoBv=s.autoVerkoop?(s.autoLease+s.autoBvKosten):0;
+  r.autoBv=autoBv;r.autoGat=s.autoVerkoop?s.autoRest-s.autoWaarde:0;
+  r.winstVoorVpb=r.omzet-s.fee-s.kosten+autoBv;
+  r.vpbBerekend=vpbJaar(r.winstVoorVpb*12)/12;
+  r.vpb=s.vpbModus==='handmatig'?s.vpbHand+autoBv*s.vpbT1/100:r.vpbBerekend;
+  r.naVpb=r.winstVoorVpb-r.vpb;
+
+  // dividendplan
+  const perJaar=Math.max(1,Math.round(s.divPerJaar||1));
+  r.planJaar=s.divAantal>0?s.divBruto*Math.min(perJaar,s.divAantal):0;
+
+  // holding
+  r.hWinst=s.fee-s.hLoonheffing-s.hLoon-s.hLoonEx-s.hKosten;
+  r.hVpb=Math.max(0,r.hWinst)*s.vpbT1/100;
+  r.hRest=r.hWinst-r.hVpb;
+
+  // opnames: wat kost het de werkmaatschappij?
+  const T=s.opname+s.opname2;
+  let G=T;
+  if(s.opnameType==='dividend'&&T>0){
+    for(let i=0;i<40;i++){const tot=r.planJaar+12*G;const rate=tot>0?box2(tot)/tot:0;G=T/(1-rate)}
+  }
+  const f=T>0?G/T:1;r.divFactor=f;
+  r.opnameBv=f*s.opname;r.opname2Bv=f*s.opname2;
+  r.opnameDivJaar=s.opnameType==='dividend'?12*G:0;
+  r.opnameRcJaar=s.opnameType==='rc'?12*T:0;
+  r.werkmaRest=r.naVpb-r.opnameBv-r.opname2Bv;
+  r.bvMaand=r.werkmaRest+r.hRest;
+  r.bvJaar=r.bvMaand*12;
+  r.verbTot=s.verbouwing*s.verbMnd;
+  const red=Math.min(s.privAflos,s.opname2);
+  const op2Jaar=y=>{const pm=Math.min(12,Math.max(0,s.privMnd-12*(y-1)));return 12*s.opname2-(s.opname2Koppel?(12-pm)*red:0)};
+
+  // belasting op het dividendplan in een volledig planjaar
+  const plan=yearTax(r.planJaar,r.opnameDivJaar);
+  r.withPlan=plan.withheld; r.b2Plan=plan.b2; r.aanslagPlan=plan.aanslag; r.netPlanJaar=r.planJaar-plan.b2;
+
+  // projectie per jaar (vanaf januari)
+  const jaren=s.divAantal>0?Math.ceil(s.divAantal/perJaar):0;
+  let rc=s.rc,cash=s.bank-r.autoGat,left=Math.max(0,Math.round(s.divAantal)),totAanslag=0,totGross=0,totWith=0;
+  r.rows=[];
+  const n=Math.min(10,Math.max(jaren+1,5));
+  for(let y=1;y<=n;y++){
+    const k=Math.min(perJaar,left);left-=k;
+    const gross=k*s.divBruto;
+    const o2=op2Jaar(y);
+    const divOp=s.opnameType==='dividend'?f*(12*s.opname+o2):0;
+    const t=yearTax(gross,divOp);
+    const start=rc;
+    const verbY=s.verbouwing*Math.min(12,Math.max(0,s.verbMnd-12*(y-1)));
+    const renteY=Math.max(0,start)*(s.rcRente||0)/100;
+    const bij=(s.opnameType==='rc'?12*s.opname+(s.planOp2?o2:0):0)+verbY+renteY;
+    rc+=bij;
+    const afl=Math.min(Math.max(rc,0),gross);
+    rc-=afl;
+    const verb=s.verbouwing*Math.min(12,Math.max(0,s.verbMnd-12*(y-1)));
+    const opbouw=12*(r.naVpb-r.opnameBv+r.hRest)-f*o2-verb;
+    cash+=opbouw-t.withheld;
+    totAanslag+=t.aanslag;totGross+=gross;totWith+=t.withheld;
+    r.rows.push({y,gross,withheld:t.withheld,aanslag:t.aanslag,bij,afl,rcStart:start,rcEind:rc,opbouw,cash});
+  }
+  r.jaren=jaren;
+  r.rcNaPlan=r.rows[Math.max(0,jaren-1)].rcEind;
+  r.totGross=totGross;r.totAanslag=totAanslag;r.totWith=totWith;
+  r.cashTekort=r.rows.find(x=>x.cash<0);
+  r.excess=r.rows.find(x=>x.rcEind>s.rcGrens);
+  r.benodigdBruto=s.rc*(1+s.divBel/100);
+
+  // huishoudbegroting
+  r.budgetNu=0;r.budgetNa=0;r.budgetCat={};
+  S.budget.forEach(b=>{const nu=+b.bedrag||0,na=nu*(+b.pct||0)/100;r.budgetNu+=nu;r.budgetNa+=na;
+    const c=r.budgetCat[b.cat]||(r.budgetCat[b.cat]={nu:0,na:0});c.nu+=nu;c.na+=na});
+  const bNu=s.budgetAan?r.budgetNu:0,bNa=s.budgetAan?r.budgetNa:0;
+  // alimentatie (vereenvoudigde Tremanormen)
+  r.al=alimCalc(r);
+  r.partnerEff=s.alimMode==='berekend'?r.al.p1:s.partner;
+  r.kindEff=s.alimMode==='berekend'?r.al.k1:s.kind;
+  // privé-cashflow
+  r.inkomen=s.salaris+s.opname+s.opname2;
+  r.woon=(s.hypBruto-s.hra)*s.hypAandeel/100;
+  r.aftrekVoordeel=s.aftrek?r.partnerEff*s.aftrekT/100:0;
+  r.b2resMaand=s.b2res&&jaren>0?r.aanslagPlan/12:0;
+  const p=s.privMnd>0?s.privAflos:0;
+  const lines=(alim,priv,kind,nu)=>[
+    ['Netto DGA-salaris',s.salaris],
+    ['Vervallen bijtelling auto',s.autoVerkoop?s.autoBijtel:0],
+    ['Vervangende auto privé',s.autoVerkoop?-s.autoPrive:0],
+    ['Aanvulling uit bv',s.opname],
+    ['Extra opname voor privéschulden',priv?s.opname2:s.opname2-(s.opname2Koppel?Math.min(s.privAflos,s.opname2):0)],
+    ['Inkomen ex-partner (huishouden)',nu?s.exInkomen:0],
+    ['Voorlopige teruggave hypotheekrente',s.hra*s.hypAandeel/100],
+    ['Hypotheek bruto (jouw aandeel)',-s.hypBruto*s.hypAandeel/100],
+    ['Extra woonlasten birdnesting',-s.birdnest],
+    ['Aflossing studieschuld',-s.studie],
+    ['Rente lening holding',-s.renteHolding],
+    ['Aflossing privéschuld',priv?-p:0],
+    ['Partneralimentatie',alim?-r.partnerEff:0],
+    ['Fiscaal voordeel alimentatieaftrek',alim?r.aftrekVoordeel:0],
+    ['Kinderalimentatie',kind?-r.kindEff:0],
+    ['Eigen kinderkosten',kind?-s.kindKosten:0],
+    ['Reservering box 2-aanslag',-r.b2resMaand],
+    [nu?'Huishoudbegroting (totaal)':'Huishoudbegroting',nu?-bNu:-bNa],
+    ['Overige leefkosten',nu?0:-s.leef]
+  ];
+  r.sc=[
+    {k:'Nu',c:'Nu',d:'vanaf jan., zonder alimentatie',l:lines(false,true,false,true)},
+    {k:'Na scheiding',c:'Na scheiding',d:'met alimentatie',l:lines(true,true,true)},
+    {k:'Na aflossing privéschuld',c:'Privéschuld af',d:`na ca. ${s.privMnd} mnd`,l:lines(true,false,true)},
+    {k:'Na einde partneralimentatie',c:'Alimentatie gestopt',d:`na ${s.partnerMnd} mnd`,l:lines(false,false,true)}
+  ];
+  r.sc.forEach(x=>x.v=x.l.reduce((a,b)=>a+b[1],0));
+  r.labelNa=(s.budgetAan||s.leef>0)?'na leefkosten':'vóór overige leefkosten';
+
+  // vermogen
+  r.overL=s.waardeL*(1-s.vk/100)-s.hyp;
+  r.overH=s.waardeH*(1-s.vk/100)-s.hyp;
+  r.bvWaarde=s.bank+s.rc+s.activa-s.bvSchuld;
+  r.latentAmt=s.latent?Math.max(0,r.bvWaarde)*s.b2laag/100:0;
+  r.bvNetto=r.bvWaarde-r.latentAmt;
+  r.schuldGem=s.rc+(s.privGem?s.privRest:0)+(s.studieGem?s.studieRest:0);
+  r.gemL=r.overL+r.bvNetto-r.schuldGem;
+  r.gemH=r.overH+r.bvNetto-r.schuldGem;
+  r.perL=r.gemL*s.aandeel/100;r.perH=r.gemH*s.aandeel/100;
+  return r;
+}
+function tabelPct(n){const pts=[[0,.22],[2000,.22],[4000,.215],[6000,.205],[8000,.19],[10000,.175],[14000,.155],[1e9,.155]];
+  for(let i=1;i<pts.length;i++)if(n<=pts[i][0]){const[a,pa]=pts[i-1],[b,pb]=pts[i];return pa+(pb-pa)*(n-a)/(b-a)}return .155}
+function alimCalc(r){
+  const s=S,a={};
+  a.ngi=s.salaris+s.hLoonEx+s.hra+(s.ngiBasis==='loonRc'?s.opname:0);
+  a.kTabel=a.ngi*tabelPct(a.ngi);
+  a.k=s.kostenKindHand>0?s.kostenKindHand:a.kTabel;
+  a.kNetto=Math.max(0,a.k-s.kgbEx);
+  a.nbiH=s.salaris+(s.nbiBasis==='loonRc'?s.opname+s.opname2:0)+s.bvWinstMee;
+  const dk=n=>Math.max(25,0.7*(n-(0.3*n+s.kidsVast)));
+  a.dkH=dk(a.nbiH);
+  a.behoefte=Math.max(0,0.6*(a.ngi-a.k));
+  const fase=exInk=>{
+    const dkE=dk(exInk);
+    const share=Math.min(a.dkH,a.kNetto*a.dkH/(a.dkH+dkE));
+    const kind=Math.max(0,share-s.zorgPct/100*a.kNetto);
+    const aanv=Math.max(0,a.behoefte-exInk);
+    const ruimte=a.nbiH-kind-s.woonNa-s.studie-(s.privMnd>0?s.privAflos:0)-s.forfait;
+    const dkNetto=Math.max(0,0.6*ruimte);
+    const dkBruto=s.aftrek?dkNetto/(1-s.aftrekT/100):dkNetto;
+    const partner=Math.min(aanv,dkBruto);
+    return{exInk,dkE,share,kind,aanv,ruimte,dkNetto,dkBruto,partner};
+  };
+  a.f1=fase(s.exNu);a.f2=fase(s.exVerdien);
+  a.k1=Math.round(a.f1.kind);a.p1=Math.round(a.f1.partner);
+  a.k2=Math.round(a.f2.kind);a.p2=Math.round(a.f2.partner);
+  return a;
+}
+function alimTable(r){
+  const a=r.al,f1=a.f1,f2=a.f2,R=(l,x,y,c)=>({v:[l,typeof x==='number'?eur(x):x,typeof y==='number'?eur(y):y],raw:[null,x,y],c});
+  return rowsTable([
+    R('Gezinsinkomen tijdens huwelijk',a.ngi,a.ngi),
+    R(S.kostenKindHand>0?'Kosten kinderen (ingevuld)':'Kosten kinderen (tabel, benadering)',a.k,a.k),
+    R('Min kindgebonden budget ex',-S.kgbEx,-S.kgbEx),
+    R('Netto kosten kinderen',a.kNetto,a.kNetto,'sub'),
+    R('Inkomen ex-partner',f1.exInk,f2.exInk),
+    R('Draagkracht kinderen: jij / ex',`${eur(a.dkH)} / ${eur(f1.dkE)}`,`${eur(a.dkH)} / ${eur(f2.dkE)}`),
+    R(`Jouw aandeel min zorgkorting (${pct(S.zorgPct)})`,f1.share-S.zorgPct/100*a.kNetto,f2.share-S.zorgPct/100*a.kNetto),
+    R('Kinderalimentatie',f1.kind,f2.kind,'total'),
+    R('Behoefte ex (60% van gezinsinkomen min kinderkosten)',a.behoefte,a.behoefte),
+    R('Aanvullende behoefte (min eigen inkomen)',f1.aanv,f2.aanv),
+    R('Jouw draagkrachtruimte na woonlast, schulden en bijstandsnorm',f1.ruimte,f2.ruimte),
+    R(S.aftrek?'Jouw draagkracht (60%, bruto na aftrek)':'Jouw draagkracht (60%)',f1.dkBruto,f2.dkBruto),
+    R('Partneralimentatie (laagste van behoefte en draagkracht)',f1.partner,f2.partner,'total')
+  ],['Per maand',`Opbouwperiode (${S.opbouwMnd} mnd)`,'Daarna']);
+}
+function yearTax(gross,extraDiv){
+  const withheld=gross*S.divBel/100;
+  const tot=gross+extraDiv;const b2=tot>0?box2(tot)*gross/tot:0;return{b2,withheld,aanslag:b2-withheld};
+}
+
+/* ---------- Signalen ---------- */
+function signals(r){
+  const s=S,out=[];
+  if(s.opnameType==='onbekend')out.push(['warn',`<b>Fiscale behandeling van de ${eur(s.opname)} opname is nog onbekend.</b> Als het een lening via de rekening-courant is, loopt je rc-schuld met ${eur(s.opname*12)} per jaar op. Als het dividend is, moet de bv ongeveer ${eur(dividendGross(r))} bruto per maand uitkeren om netto ${eur(s.opname)} over te houden.`]);
+  if(s.opnameType==='rc'){
+    const r1=r.rows[0],netto=r1.afl-r1.bij;
+    out.push(['bad',`<b>Je rc-schuld groeit met ${eur(r1.bij)} in het eerste jaar</b> door de opnames van ${eur(s.opname)} en ${eur(s.opname2)} per maand. ${r1.gross>0?`De tranche van ${eur(r1.gross)} (plus ${eur(r1.withheld)} dividendbelasting) lost ${eur(r1.afl)} af, dus per saldo ${netto>=0?'daalt':'stijgt'} de rc-schuld met ${eur(Math.abs(netto))} per jaar.`:''}`]);
+  }
+  if(r.excess)out.push(['bad',`In jaar ${r.excess.y} komt je rc-schuld boven de grens van ${eur(s.rcGrens)} van de wet excessief lenen (${eur(r.excess.rcEind)}). Over het meerdere betaal je dan box 2-belasting alsof het dividend is.`]);
+  if(s.hLoonEx>0)out.push(['warn',`<b>Je ex-partner is in dienst van je holding</b> (${eur(s.hLoonEx)} netto per maand). Na de scheiding valt dat inkomen voor haar waarschijnlijk weg. Dat kan de partneralimentatie verhogen. Voor de holding scheelt het ongeveer ${eur(s.hLoonEx)} per maand. Beëindig het dienstverband via de juiste route, met afspraken in het convenant.`]);
+  if(r.al.f1.dkBruto<r.al.f1.aanv)out.push(['',`Partneralimentatie wordt begrensd door <b>jouw draagkracht</b> (${eur(r.al.f1.dkBruto)}), niet door haar behoefte (${eur(r.al.f1.aanv)}). Je hoge woonlast drukt je draagkracht. Na verkoop van de woning stijgt je draagkracht, en daarmee mogelijk de alimentatie.`]);
+  if(r.verbTot>0)out.push(['',`Het restant van de werkmaatschappij gaat ${s.verbMnd} maand${s.verbMnd==1?'':'en'} naar de verbouwing (${eur(r.verbTot)} in totaal). Daarna bouw je ${eur(r.bvMaand)} per maand buffer op in werkmaatschappij en holding samen.`]);
+  if(s.opnameType==='dividend')out.push(['',`De bv keert voor de opname ongeveer <b>${eur(r.opnameBv)} bruto per maand</b> uit. Dat verlaagt de opbouw in de bv.`]);
+  if(r.jaren>0&&r.rcNaPlan>1)out.push(['warn',`Na ${s.divAantal} tranches van ${eur(s.divBruto)} resteert nog <b>${eur(r.rcNaPlan)} rc-schuld</b>. Per tranche los je ${eur(s.divBruto)} af en draagt de holding ${eur(s.divBruto*s.divBel/100)} dividendbelasting af. Om ${eur(s.rc)} volledig af te lossen kost dat de bv ongeveer ${eur(r.benodigdBruto)}.`]);
+  if(r.jaren>0&&r.aanslagPlan>0&&!s.b2res)out.push(['warn',`Bovenop de ingehouden dividendbelasting volgt privé een <b>box 2-aanslag van ca. ${eur(r.aanslagPlan)} per jaar</b> (${eur(r.aanslagPlan/12)} p/m). Die zit nog niet in de cashflow. Zet het vinkje bij stap 4 aan om hem mee te nemen.`]);
+  if(r.cashTekort)out.push(['bad',`De bv heeft in jaar ${r.cashTekort.y} te weinig liquiditeit om de dividendbelasting af te dragen (saldo ${eur(r.cashTekort.cash)}).`]);
+  if(r.bvJaar<r.planJaar&&r.jaren>0)out.push(['',`De jaarlijkse opbouw in de bv (${eur(r.bvJaar)}) is lager dan het jaarlijkse dividend (${eur(r.planJaar)}). Bij verrekening met de rc-schuld hoeft de bv alleen de dividendbelasting in contanten te betalen, maar er moeten wel voldoende uitkeerbare reserves zijn en de uitkeringstoets moet slagen.`]);
+  const neg=r.sc.filter(x=>x.v<0);
+  if(neg.length)out.push(['bad',`<b>Negatieve maandruimte</b> in: ${neg.map(x=>x.k.toLowerCase()).join(', ')}.`]);
+  else if(r.sc[1].v<500)out.push(['bad',`Na de scheiding blijft er <b>${eur(r.sc[1].v)} per maand</b> over ${r.labelNa}. Dat is te weinig voor boodschappen, verzekeringen, vervoer en kinderkosten.`]);
+  if(!s.budgetAan&&s.leef===0)out.push(['',`Boodschappen, verzekeringen, vervoer en kinderkosten tellen nu niet mee. Alle bedragen zijn daarom <b>vóór overige leefkosten</b>.`]);
+  if(s.budgetAan&&s.opname2<=0&&(s.studie>0||s.privAflos>0))out.push(['warn',`Je huishoudbegroting bevat geen aflossing van de studieschuld (${eur(s.studie)}) en de privéschuld (${eur(s.privAflos)}). De wizard telt die er los bij op. Worden ze nu uit een andere bron betaald, zet ze dan op €0 bij stap 2.`]);
+  if(s.budgetAan&&s.leef===0)out.push(['',`Na de scheiding reken je met ${eur(r.budgetNa)} van de ${eur(r.budgetNu)} huishoudbegroting. Kosten voor eigen woonruimte buiten birdnesting zitten daar nog niet in.`]);
+  if(!s.aftrek&&r.partnerEff>0)out.push(['',`Partneralimentatie is aftrekbaar. Bij een tarief van 37,56% scheelt dat ongeveer ${eur(r.partnerEff*0.3756)} per maand. Vink het aan bij stap 5 als je accountant dit bevestigt.`]);
+  if(s.omzetBasis==='berekend'&&Math.abs(r.omzet-18000)>1)out.push(['',`Je rekent nu met ${eur(r.omzet)} maandomzet (${eur(s.tarief)} × ${s.uren} uur × ${s.weken} weken ÷ 12). Je afgeronde voorbeeld van €18.000 geeft een hogere opbouw in de bv. Kies "Zelf invullen" bij stap 1 om dat te vergelijken.`]);
+  return out;
+}
+function dividendGross(r){
+  let G=S.opname;for(let i=0;i<40;i++){const tot=r.planJaar+12*G;const rate=tot>0?box2(tot)/tot:0;G=S.opname/(1-rate)}return G;
+}
+
+/* ---------- Weergave ---------- */
+function renderNav(){
+  document.getElementById('steps').innerHTML=STEPS.map((st,i)=>`<button type="button" data-i="${i}" ${i===cur?'aria-current="step"':''}><span class="n">${i+1}</span>${st.t}</button>`).join('');
+  document.querySelectorAll('#steps button').forEach(b=>b.onclick=()=>go(+b.dataset.i));
+}
+function go(i){cur=i;renderNav();renderPanel();window.scrollTo({top:0,behavior:'auto'})}
+
+function fieldHTML(f){
+  if(f.g)return `<div class="group-title">${f.g}</div>`;
+  if(f.custom==='budget')return budgetHTML();
+  if(f.show&&!f.show())return '';
+  const v=S[f.id];
+  const help=f.h?`<span class="help">${f.h}</span>`:'';
+  if(f.type==='check')return `<div class="f check"><input type="checkbox" id="${f.id}" ${v?'checked':''}><div><label for="${f.id}">${f.l}</label>${f.h?`<div class="help">${f.h}</div>`:''}</div></div>`;
+  if(f.type==='select')return `<div class="f"><label for="${f.id}">${f.l}</label><div class="inp"><select id="${f.id}">${f.opts.map(o=>`<option value="${o[0]}" ${o[0]===v?'selected':''}>${o[1]}</option>`).join('')}</select></div>${help}</div>`;
+  const pre=f.u==='€'?'<span>€</span>':'';
+  const post=f.u&&f.u!=='€'?`<span>${f.u}</span>`:'';
+  return `<div class="f"><label for="${f.id}">${f.l}</label><div class="inp">${pre}<input type="number" inputmode="decimal" step="any" id="${f.id}" value="${v}">${post}</div>${help}</div>`;
+}
+
+function renderPanel(){
+  const st=STEPS[cur],el=document.getElementById('panel');
+  if(st.id==='sum'){renderSummary(el);return}
+  el.innerHTML=`<h2>${cur+1}. ${st.t}</h2><p class="intro">${st.intro}</p>
+    <div class="fields">${st.fields.map(fieldHTML).join('')}</div>
+    <div class="calc" id="calc"></div>
+    <div class="nav-btns">${cur>0?`<button class="btn" type="button" id="prev">← ${STEPS[cur-1].t}</button>`:'<span></span>'}<button class="btn primary" type="button" id="next">${STEPS[cur+1].t} →</button></div>`;
+  bindBudget();
+  st.fields.forEach(f=>{
+    if(f.g)return;const inp=document.getElementById(f.id);if(!inp)return;
+    if(f.type==='check')inp.onchange=()=>{S[f.id]=inp.checked;changed(true)};
+    else if(f.type==='select')inp.onchange=()=>{S[f.id]=inp.value;changed(true)};
+    else inp.oninput=()=>{const n=parseFloat(String(inp.value).replace(',','.'));S[f.id]=isNaN(n)?0:n;changed(false)};
+  });
+  const p=document.getElementById('prev');if(p)p.onclick=()=>go(cur-1);
+  document.getElementById('next').onclick=()=>go(cur+1);
+  renderCalc();
+}
+function changed(rerender){save();if(rerender){const a=document.activeElement&&document.activeElement.id;renderPanel();if(a){const e=document.getElementById(a);if(e)e.focus()}}else renderCalc();renderLive()}
+
+function rowsTable(rows,head){
+  return `<div class="tbl-wrap"><table class="${head&&head.length>3?'wide':''}">${head?`<thead><tr>${head.map((h,i)=>`<th class="${i?'num':''}">${h}</th>`).join('')}</tr></thead>`:''}<tbody>${rows.map(r=>{
+    const c=r.c||'';return `<tr class="${c}">${r.v.map((x,i)=>`<td class="${i?'num':''} ${typeof r.raw?.[i]==='number'?cls(r.raw[i]):''}">${x}</td>`).join('')}</tr>`}).join('')}</tbody></table></div>`;
+}
+const row=(label,val,c)=>({v:[label,typeof val==='number'?eur(val):val],raw:[null,val],c});
+
+function bvTable(r){
+  const lbl=S.opnameType==='rc'?' (via rc)':S.opnameType==='dividend'?' (bruto dividend)':'';
+  return rowsTable([
+    {v:['<b>Werkmaatschappij</b>',''],raw:[]},
+    row('Omzet',r.omzet),row('Managementfee naar holding',-S.fee),row('Zakelijke kosten',-S.kosten),(r.autoBv?row('Autokosten die vervallen',r.autoBv):null),
+    row(S.vpbModus==='handmatig'?'VPB (eigen schatting)':'VPB (berekend)',-r.vpb),
+    row('Beschikbaar na deze posten',r.naVpb,'total'),
+    row('Aanvulling privé'+lbl,-r.opnameBv),
+    row('Extra voor privéschulden'+lbl,-r.opname2Bv),
+    row('Restant werkmaatschappij',r.werkmaRest,'total'),
+    {v:['<b>Holding</b>',''],raw:[]},
+    row('Managementfee ontvangen',S.fee),row('Loonheffing DGA-loon',-S.hLoonheffing),row('Netto DGA-loon',-S.hLoon),row('Salaris ex-partner',-S.hLoonEx),
+    S.hKosten?row('Overige kosten holding',-S.hKosten):null,
+    row(`VPB holding (${pct(S.vpbT1)})`,-r.hVpb),
+    row('Restant holding',r.hRest,'total'),
+    row('Buffer per maand (werkmaatschappij + holding)',r.bvMaand,'total'),
+    row('Buffer per jaar',r.bvJaar,'sub'),
+    r.verbTot?row(`Eerst naar verbouwing (${S.verbMnd} mnd)`,-r.verbTot,'sub'):null
+  ].filter(Boolean),['Per maand','Bedrag']);
+}
+function dividendTable(r){
+  return rowsTable(r.rows.map(x=>({v:[`Jaar ${x.y}`,eur(x.bij),eur(x.gross),eur(x.withheld),eur(x.aanslag),eur(x.afl),eur(x.rcEind),eur(x.opbouw),eur(x.cash)],raw:[null,null,null,null,null,null,x.rcEind,x.opbouw,x.cash]})),
+    ['Jaar','Rc erbij (opnames en rente)','Tranche','Div.belasting (holding)','Box 2-aanslag privé (jaar erna)','Rc afgelost','Rc-schuld eind','Buffer erbij','Buffer eind']);
+}
+function cashTable(r){
+  const labels=r.sc[1].l.map(x=>x[0]);
+  const rows=labels.map((lab,i)=>{const vals=r.sc.map(s=>s.l[i][1]);if(vals.every(v=>Math.round(v)===0))return null;return{v:[lab,...vals.map(v=>Math.round(v)===0?'–':eurS(v))],raw:[null,...vals]}}).filter(Boolean);
+  rows.push({v:[`Resterend per maand (${r.labelNa})`,...r.sc.map(s=>eur(s.v))],raw:[null,...r.sc.map(s=>s.v)],c:'total'});
+  return rowsTable(rows,['Per maand',...r.sc.map(s=>s.k)]);
+}
+function leningVergelijk(r){
+  const L=Math.min(S.lening||0,S.rc),t=S.b2laag/100,ov=r.overL;
+  const mk=viaVerkoop=>{const priv=ov-(viaVerkoop?L:0);const opDiv=viaVerkoop?S.rc-L:S.rc;const bvRest=r.bvWaarde-opDiv;const nu=opDiv*t;const lat=Math.max(0,bvRest)*t;const tot=priv+bvRest-nu;return{priv,opDiv,bvRest,nu,lat,tot,totL:tot-lat}};
+  const a=mk(true),b=mk(false);
+  const rw=(l,x,y,c)=>({v:[l,eur(x),eur(y)],raw:[null,x,y],c});
+  return rowsTable([
+    rw('Overwaarde woning na aflossen (contant, te verdelen)',a.priv,b.priv),
+    rw('Met dividend weggestreept (rc + eventueel lening)',a.opDiv,b.opDiv),
+    rw('Waarde bv na aflossen',a.bvRest,b.bvRest),
+    rw('Box 2-belasting over dat dividend (nu betaald)',-a.nu,-b.nu),
+    rw('Samen over, zonder belasting op geld in de bv',a.tot,b.tot,'total'),
+    rw('Latente box 2 over geld dat in de bv blijft',-a.lat,-b.lat),
+    rw('Samen over, met die belasting',a.totL,b.totL,'total'),
+    rw('Per persoon (met die belasting)',a.totL/2,b.totL/2,'sub')
+  ],['Lening holding','Aflossen uit verkoop','Wegstrepen met dividend']);
+}
+function vermogenTable(r){
+  const two=(a,b)=>Math.round(a)===Math.round(b)?eur(a):`${eur(a)} – ${eur(b)}`;
+  const rr=(l,a,b,c)=>({v:[l,two(a,b)],raw:[null,a],c});
+  return rowsTable([
+    rr('Woningwaarde',S.waardeL,S.waardeH),
+    S.vk?rr('Verkoopkosten',-S.waardeL*S.vk/100,-S.waardeH*S.vk/100):null,
+    rr('Hypotheek',-S.hyp,-S.hyp),
+    rr('Overwaarde woning',r.overL,r.overH,'total'),
+    rr('Aandelen bv: banksaldo',S.bank,S.bank),
+    rr('Aandelen bv: vordering rc op jou',S.rc,S.rc),
+    S.activa?rr('Aandelen bv: overige bezittingen',S.activa,S.activa):null,
+    S.bvSchuld?rr('Aandelen bv: schulden',-S.bvSchuld,-S.bvSchuld):null,
+    S.latent?rr('Latente box 2-claim',-r.latentAmt,-r.latentAmt):null,
+    rr('Rc-schuld aan bv (privé)',-S.rc,-S.rc),
+    S.privGem?rr('Restant privéschuld',-S.privRest,-S.privRest):null,
+    S.studieGem?rr('Restant studieschuld',-S.studieRest,-S.studieRest):null,
+    rr('Netto gemeenschap (indicatief)',r.gemL,r.gemH,'total'),
+    rr(`Jouw aandeel (${pct(S.aandeel)})`,r.perL,r.perH,'sub'),
+    rr(`Aandeel ex-partner (${pct(100-S.aandeel)})`,r.gemL-r.perL,r.gemH-r.perH,'sub')
+  ].filter(Boolean),['Onderdeel','Bedrag']);
+}
+
+function budgetHTML(){
+  return `<div style="grid-column:1/-1;min-width:0"><div class="tbl-wrap"><table class="wide budget"><thead><tr><th>Post</th><th>Categorie</th><th class="num">Nu (huishouden)</th><th class="num">Jouw deel na</th><th class="num">Na scheiding</th><th></th></tr></thead><tbody>${S.budget.map((b,i)=>`<tr>
+    <td><input class="bi" id="b-${i}-naam" value="${String(b.naam).replace(/"/g,'&quot;')}" aria-label="Post"></td>
+    <td><select class="bi" id="b-${i}-cat" aria-label="Categorie">${CATS.map(c=>`<option ${c===b.cat?'selected':''}>${c}</option>`).join('')}</select></td>
+    <td class="num"><input class="bi n" type="number" step="any" inputmode="decimal" id="b-${i}-bedrag" value="${b.bedrag}" aria-label="Bedrag nu"></td>
+    <td class="num"><input class="bi n p" type="number" step="any" inputmode="decimal" id="b-${i}-pct" value="${b.pct}" aria-label="Jouw deel in procenten">%</td>
+    <td class="num" data-bna="${i}">${eur((+b.bedrag||0)*(+b.pct||0)/100)}</td>
+    <td><button type="button" class="del" data-del="${i}" aria-label="Verwijder ${String(b.naam).replace(/"/g,'&quot;')}">×</button></td></tr>`).join('')}
+    <tr class="total" id="btot"></tr></tbody></table></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="btn" type="button" id="badd">Post toevoegen</button><button class="btn" type="button" id="breset">Begroting herstellen</button></div></div>`;
+}
+function bindBudget(){
+  S.budget.forEach((b,i)=>['naam','cat','bedrag','pct'].forEach(k=>{const e=document.getElementById(`b-${i}-${k}`);if(!e)return;
+    e.oninput=e.onchange=()=>{if(k==='bedrag'||k==='pct'){const n=parseFloat(String(e.value).replace(',','.'));b[k]=isNaN(n)?0:n}else b[k]=e.value;changed(false)}}));
+  document.querySelectorAll('[data-del]').forEach(e=>e.onclick=()=>{S.budget.splice(+e.dataset.del,1);changed(true)});
+  const a=document.getElementById('badd');if(a)a.onclick=()=>{S.budget.push({naam:'Nieuwe post',bedrag:0,cat:'Overig',pct:100});changed(true)};
+  const rs=document.getElementById('breset');if(rs)rs.onclick=()=>{S.budget=BUDGET.map(x=>({...x}));changed(true)};
+}
+function budgetCatTable(r){
+  const rows=Object.entries(r.budgetCat).map(([c,v])=>({v:[c,eur(v.nu),eur(v.na)],raw:[null,null,null]}));
+  rows.push({v:['Totaal',eur(r.budgetNu),eur(r.budgetNa)],raw:[null,null,null],c:'total'});
+  return rowsTable(rows,['Categorie','Nu','Na scheiding']);
+}
+
+function renderCalc(){
+  const r=compute(),id=STEPS[cur].id,el=document.getElementById('calc');if(!el)return;
+  let h='';
+  if(id==='bv'){
+    h=`<h3>Berekend: maandelijkse vermogensopbouw in de bv</h3>
+    <p class="note" style="margin:0 0 10px">Jaaromzet ${eur(r.jaaromzet)} excl. btw, gemiddeld ${eur(r.omzetBerekend)} per maand. Berekende VPB bij deze winst: ${eur(r.vpbBerekend)} per maand.</p>${bvTable(r)}
+    <p class="note">Dit is een kasstroomberekening, geen gecontroleerde winstberekening. Vóór aanvullende belastingen, correcties en aflossing van bestaande schulden.</p>`;
+  }
+  if(id==='prive'){
+    document.querySelectorAll('[data-bna]').forEach(e=>{const b=S.budget[+e.dataset.bna];e.textContent=eur((+b.bedrag||0)*(+b.pct||0)/100)});
+    const bt=document.getElementById('btot');if(bt)bt.innerHTML=`<td>Totaal</td><td></td><td class="num">${eur(r.budgetNu)}</td><td></td><td class="num">${eur(r.budgetNa)}</td><td></td>`;
+    h=`<h3>Berekend: privé-cashflow nu</h3>${rowsTable(r.sc[0].l.filter(x=>Math.round(x[1])!==0).map(x=>({v:[x[0],eurS(x[1])],raw:[null,x[1]]})).concat([{v:[`Resterend per maand (${r.labelNa})`,eur(r.sc[0].v)],raw:[null,r.sc[0].v],c:'total'}]),['Per maand','Bedrag'])}
+    <p class="note">Van de netto woonlast van ${eur(S.hypBruto-S.hra)} is ${eur(S.hypAflos)} aflossing en ${eur(S.hypBruto-S.hra-S.hypAflos)} rente. Het inkomen van je ex-partner telt alleen mee in het scenario Nu.</p>`;
+  }
+  if(id==='woning'){
+    h=`<h3>Berekend: indicatieve vermogensverdeling</h3>${vermogenTable(r)}
+    <p class="note">De rc-vordering van de bv en jouw rc-schuld vallen tegen elkaar weg zolang ze samen worden gewaardeerd. Zo voorkom je dubbeltelling.</p>
+    <h3>Vergelijking: lening holding aflossen uit de verkoop of wegstrepen met dividend</h3>${leningVergelijk(r)}
+    <p class="note">Bij de lage woningwaarde en ${pct(S.b2laag)} box 2. Met dividend houden jullie meer contant geld over uit de verkoop, maar de bv is evenveel minder waard en de belasting betaal je meteen. Wordt de lening uit de verkoop afgelost, dan blijft hetzelfde geld in de bv en betaal je die belasting pas als het eruit gaat. Telt de belasting op geld in de bv mee, dan is de uitkomst gelijk. Telt die niet mee, dan lijkt aflossen uit de verkoop ${eur((Math.min(S.lening||0,S.rc))*S.b2laag/100)} gunstiger, maar die belasting komt later alsnog.</p>`;
+  }
+  if(id==='rc'){
+    h=`<h3>Berekend: dividendplan per jaar</h3>${dividendTable(r)}
+    <p class="note">Aanname: per tranche wordt het volledige bedrag verrekend met de rc-schuld en betaalt de holding daarbovenop ${pct(S.divBel)} dividendbelasting in contanten (bij €50.000: €7.500, samen €57.500). Bij brutering kan de accountant iets meer inhouden. De box 2-aanslag betaal je privé. De buffer is werkmaatschappij en holding samen; een dividend van werkmaatschappij naar holding is in de regel belastingvrij (deelnemingsvrijstelling).</p>`;
+  }
+  if(id==='alim'){
+    h=`<h3>Berekend: alimentatie</h3>${alimTable(r)}<p class="note">Vereenvoudigde benadering van de Tremanormen. De scenario's gebruiken de bedragen uit de opbouwperiode. Laat de definitieve berekening maken door de mediator of een alimentatierekenaar.</p><p class="note"><b>Waarom kinderalimentatie bij 50/50 co-ouderschap?</b> De kosten van de kinderen worden niet naar tijd verdeeld, maar naar draagkracht. (1) De totale kosten volgen uit het gezinsinkomen tijdens het huwelijk. (2) Daar gaat het kindgebonden budget van de ex af. (3) Die netto kosten worden verdeeld naar verhouding van ieders draagkracht. (4) Van jouw aandeel gaat de zorgkorting af (35% bij 3 of meer dagen per week): dat zijn de kosten die je zelf maakt als de kinderen bij jou zijn, zoals eten en wonen. (5) Wat overblijft is de kinderalimentatie. Daarmee betaal je mee aan de kosten die de andere ouder voor allebei maakt, zoals kleding, school en sport. Bij gelijke inkomens zou de uitkomst ongeveer nul zijn.</p>
+    <h3 style="margin-top:20px">Berekend: maandruimte in vier scenario's</h3>${cashTable(r)}`;
+  }
+  const sg=signals(r);
+  el.innerHTML=h+(sg.length?`<div class="callouts">${sg.map(x=>`<div class="co ${x[0]}">${x[1]}</div>`).join('')}</div>`:'');
+}
+
+function chartSVG(r){
+  const W=640,H=250,pl=8,pr=8,pt=28,pb=46;
+  const vals=r.sc.map(x=>x.v);const mx=Math.max(0,...vals),mn=Math.min(0,...vals);
+  const span=(mx-mn)||1;const y=v=>pt+(mx-v)/span*(H-pt-pb);
+  const bw=(W-pl-pr)/r.sc.length;
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Maandruimte per scenario">`;
+  s+=`<line x1="${pl}" x2="${W-pr}" y1="${y(0)}" y2="${y(0)}" stroke="var(--line)" stroke-width="1.5"/>`;
+  r.sc.forEach((x,i)=>{
+    const cx=pl+bw*i+bw/2,w=Math.min(90,bw*.55),y0=y(0),y1=y(x.v);
+    const top=Math.min(y0,y1),h=Math.max(2,Math.abs(y1-y0));
+    s+=`<rect x="${cx-w/2}" y="${top}" width="${w}" height="${h}" rx="4" fill="${x.v<0?'var(--bad)':'var(--accent)'}"/>`;
+    s+=`<text x="${cx}" y="${x.v<0?top+h+16:top-8}" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="14" font-weight="600" fill="var(--ink)">${eur(x.v)}</text>`;
+    s+=`<text x="${cx}" y="${H-24}" text-anchor="middle" font-size="12.5" font-weight="600" fill="var(--ink)">${x.c}</text>`;
+    s+=`<text x="${cx}" y="${H-8}" text-anchor="middle" font-size="11.5" fill="var(--muted)">${x.d}</text>`;
+  });
+  return s+'</svg>';
+}
+
+function renderLive(){
+  const r=compute(),el=document.getElementById('live');
+  const mx=Math.max(1,...r.sc.map(x=>Math.abs(x.v)));
+  el.innerHTML=`<div class="panel"><h3>Maandruimte ${r.labelNa}</h3><div class="bars">${r.sc.map(x=>`<div class="bar"><span>${x.k}</span><b class="${cls(x.v)}">${eur(x.v)}</b><div class="track"><div class="fill" style="left:0;width:${Math.abs(x.v)/mx*100}%;background:${x.v<0?'var(--bad)':'var(--accent)'}"></div></div></div>`).join('')}</div></div>
+  <div class="panel"><h3>Bv</h3>
+    <div class="kv"><span>Buffer per jaar</span><b class="${cls(r.bvJaar)}">${eur(r.bvJaar)}</b></div>
+    <div class="kv"><span>Rc-schuld nu</span><b>${eur(S.rc)}</b></div>
+    <div class="kv"><span>Rc-schuld na dividendplan</span><b>${eur(r.rcNaPlan)}</b></div>
+    <div class="kv"><span>Box 2-aanslag privé p/j</span><b>${eur(r.aanslagPlan)}</b></div></div>
+  <div class="panel"><h3>Vermogen (indicatief)</h3>
+    <div class="kv"><span>Overwaarde woning</span><b>${eur(r.overL)} – ${eur(r.overH)}</b></div>
+    <div class="kv"><span>Jouw aandeel</span><b>${eur(r.perL)} – ${eur(r.perH)}</b></div></div>`;
+}
+
+function questions(r){
+  const q=[
+    `Klopt het dat de opnames van ${eur(S.opname)} en ${eur(S.opname2)} per maand via de rekening-courant lopen? Is er een leningsovereenkomst met rente en aflossing?`,
+    `Bij welke vennootschap staat de rc-schuld: de werkmaatschappij of de holding? Het dividend om de schuld af te lossen moet uit die vennootschap komen.`,
+    `Je ex-partner is in dienst van je holding (10 uur per week). Loopt dat dienstverband door na de scheiding, en hoe wordt het netjes beëindigd?`,
+    `Wat is de werkelijke vrije kasstroom van de bv volgens de jaarcijfers, inclusief VPB en eventuele correcties?`,
+    `Hoe wordt de rc-schuld van ${eur(S.rc)} verdeeld, en wordt die samen met de waarde van de aandelen gewaardeerd?`,
+    `Wordt bij de waardering van de bv rekening gehouden met een latente box 2-claim?`,
+    `Is het dividendplan haalbaar (uitkeerbare reserves, uitkeringstoets) en hoe wordt de box 2-aanslag betaald?`,
+    `Hoe hoog wordt de partneralimentatie, gezien haar verdiencapaciteit (PA, officemanager, webshop) en jouw DGA-inkomen? Hoe lang loopt die?`,
+    `Is er kinderalimentatie verschuldigd bij 50/50 co-ouderschap, en hoe worden de kinderkosten verdeeld?`,
+    `Wat kost birdnesting per maand, wie betaalt de woonlasten in die periode en hoe lang duurt het tot de verkoop?`,
+    `Hoe lang blijft de hypotheekrenteaftrek beschikbaar na de scheiding?`,
+    `Is de privéschuld een gemeenschapsschuld? Valt de studieschuld buiten de gemeenschap?`
+  ];
+  return q;
+}
+
+function renderSummary(el){
+  const r=compute();
+  el.innerHTML=`<div class="sumhead"><div><h2>Samenvatting voor de mediator</h2><p class="intro" style="margin:0">Op basis van jouw invoer. Alle bedragen zijn indicatief.</p></div>
+    <div class="actions"><button class="btn primary" type="button" id="copy">Kopieer als tekst</button><button class="btn" type="button" id="reset">Standaardwaarden herstellen</button><span class="toast" id="toast"></span></div></div>
+    <div id="resetConfirm"></div>
+    <div class="sec"><h3>Maandelijkse privé-cashflow in vier scenario's</h3><div class="chart">${chartSVG(r)}</div>${cashTable(r)}
+      <p class="note">Het derde scenario gaat uit van het vervallen van de privéschuldaflossing na ca. ${S.privMnd} maanden, terwijl partneralimentatie nog loopt. Het vierde scenario is na ${S.partnerMnd} maanden partneralimentatie.</p></div>
+    ${S.budgetAan?`<div class="sec"><h3>Huishoudbegroting</h3>${budgetCatTable(r)}<p class="note">Nu is het totaal van het huidige huishouden. Na scheiding is jouw deel per post, bijvoorbeeld 50% bij gedeelde kosten voor de kinderen.</p></div>`:''}
+    <div class="sec"><h3>Inkomen en vermogensopbouw in de bv</h3>${bvTable(r)}</div>
+    <div class="sec"><h3>Rekening-courant en dividendplan</h3>${dividendTable(r)}
+      <p class="note">${S.divAantal} tranches × ${eur(S.divBruto)} = ${eur(S.divAantal*S.divBruto)} aflossing op de rc. De holding draagt daarbovenop ${eur(r.totWith)} dividendbelasting af, en het jaar erna volgt ca. ${eur(r.totAanslag)} aan box 2-aanslag privé. Volledige aflossing van ${eur(S.rc)} kost de bv ongeveer ${eur(r.benodigdBruto)}.</p></div>
+    <div class="sec"><h3>Woning en vermogen</h3>${vermogenTable(r)}</div>
+    <div class="sec"><h3>Aandachtspunten</h3><div class="callouts" style="margin-top:0">${signals(r).map(x=>`<div class="co ${x[0]}">${x[1]}</div>`).join('')}</div></div>
+    <div class="sec"><h3>Open vragen voor accountant, advocaat en mediator</h3><ol class="q">${questions(r).map(x=>`<li>${x}</li>`).join('')}</ol></div>
+    <p class="disc">Deze berekening is een eerste inschatting en geen fiscaal, juridisch of financieel advies. Tarieven (VPB, dividendbelasting, box 2, aftrek) zijn aannames voor 2026 en moeten worden gecontroleerd. De fiscale behandeling van managementfee, privéopnames, dividend en alimentatie moet worden bevestigd door een accountant of fiscalist. De verdeling van vermogen en schulden hangt af van het huwelijksgoederenregime en wordt vastgesteld met je advocaat en mediator.</p>
+    <div class="sec" id="copyBox" hidden><h3>Tekst om te kopiëren</h3><textarea class="copy" id="copyText" readonly></textarea></div>
+    <div class="nav-btns"><button class="btn" type="button" id="prev">← ${STEPS[cur-1].t}</button></div>`;
+  document.getElementById('prev').onclick=()=>go(cur-1);
+  document.getElementById('copy').onclick=async()=>{
+    const t=summaryText(r),box=document.getElementById('copyBox'),ta=document.getElementById('copyText'),toast=document.getElementById('toast');
+    ta.value=t;
+    try{await navigator.clipboard.writeText(t);toast.textContent='Gekopieerd';}
+    catch(e){box.hidden=false;ta.focus();ta.select();toast.textContent='Selecteer de tekst hieronder en kopieer handmatig';}
+    setTimeout(()=>toast.textContent='',4000);
+  };
+  document.getElementById('reset').onclick=()=>{
+    document.getElementById('resetConfirm').innerHTML=`<div class="co warn" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between"><span>Alle invoer terugzetten naar de oorspronkelijke bedragen?</span><span class="actions"><button class="btn primary" type="button" id="rYes">Terugzetten</button><button class="btn" type="button" id="rNo">Annuleren</button></span></div>`;
+    document.getElementById('rYes').onclick=()=>{S={...DEFAULTS,budget:BUDGET.map(x=>({...x}))};save();renderPanel();renderLive()};
+    document.getElementById('rNo').onclick=()=>document.getElementById('resetConfirm').innerHTML='';
+  };
+}
+
+function summaryText(r){
+  const L=[],pad=(a,b)=>`  ${a}${' '.repeat(Math.max(2,44-a.length))}${b}`;
+  const d=new Date().toLocaleDateString('nl-NL');
+  L.push(`FINANCIEEL OVERZICHT SCHEIDING (DGA), indicatief, ${d}`,'');
+  L.push('1. MAANDELIJKSE PRIVÉ-CASHFLOW ('+r.labelNa+')');
+  r.sc.forEach(s=>L.push(pad(`${s.k} (${s.d})`,eur(s.v))));
+  L.push('  Opbouw scenario "Na scheiding":');
+  r.sc[1].l.filter(x=>Math.round(x[1])!==0).forEach(x=>L.push(pad('  '+x[0],eurS(x[1]))));
+  if(S.budgetAan){L.push('','HUISHOUDBEGROTING (nu totaal / jouw deel na scheiding)');Object.entries(r.budgetCat).forEach(([c,v])=>L.push(pad(c,`${eur(v.nu)} / ${eur(v.na)}`)));L.push(pad('Totaal',`${eur(r.budgetNu)} / ${eur(r.budgetNa)}`));}
+  L.push('','2. BV (per maand)');
+  L.push(pad('Omzet werkmaatschappij',eur(r.omzet)),pad('Managementfee naar holding',eur(-S.fee)),pad('Zakelijke kosten',eur(-S.kosten)),pad('VPB',eur(-r.vpb)),pad('Aanvulling privé',eur(-r.opnameBv)),pad('Extra voor privéschulden',eur(-r.opname2Bv)),pad('Restant werkmaatschappij',eur(r.werkmaRest)),pad('Holding: loonheffing',eur(-S.hLoonheffing)),pad('Holding: netto DGA-loon',eur(-S.hLoon)),pad('Holding: salaris ex-partner',eur(-S.hLoonEx)),pad('Restant holding (na VPB)',eur(r.hRest)),pad('Buffer per maand',eur(r.bvMaand)),pad('Buffer per jaar',eur(r.bvJaar)));
+  L.push(pad('Behandeling opnames',{onbekend:'nog onbekend',rc:'lening via rekening-courant',dividend:'dividend'}[S.opnameType]));
+  L.push('','3. REKENING-COURANT EN DIVIDEND');
+  L.push(pad('Rc-schuld aan bv',eur(S.rc)),pad('Dividendplan',`${S.divAantal} tranches × ${eur(S.divBruto)} aflossing + ${pct(S.divBel)} dividendbelasting`));
+  r.rows.forEach(x=>L.push(pad(`Jaar ${x.y}`,`rc erbij ${eur(x.bij)}, tranche ${eur(x.gross)} + dividendbelasting ${eur(x.withheld)}, afgelost ${eur(x.afl)}, rc eind ${eur(x.rcEind)}, buffer eind ${eur(x.cash)}`)));
+  L.push(pad('Benodigd bruto voor volledige aflossing',eur(r.benodigdBruto)));
+  L.push('','4. WONING EN VERMOGEN');
+  L.push(pad('Woningwaarde',`${eur(S.waardeL)} – ${eur(S.waardeH)}`),pad('Hypotheek',eur(S.hyp)),pad('Overwaarde'+(S.vk?` (na ${pct(S.vk)} verkoopkosten)`:''),`${eur(r.overL)} – ${eur(r.overH)}`));
+  L.push(pad('Waarde aandelen bv (incl. rc-vordering)',eur(r.bvNetto)),pad('Rc-schuld (privé)',eur(-S.rc)));
+  if(S.privGem)L.push(pad('Restant privéschuld',eur(-S.privRest)));
+  if(S.studieGem)L.push(pad('Restant studieschuld',eur(-S.studieRest)));
+  L.push(pad('Netto gemeenschap',`${eur(r.gemL)} – ${eur(r.gemH)}`),pad(`Aandeel per persoon (${pct(S.aandeel)})`,`${eur(r.perL)} – ${eur(r.perH)}`));
+  L.push('','5. ALIMENTATIE');
+  L.push(pad('Partneralimentatie',`${eur(r.partnerEff)} p/m${S.alimMode==='berekend'?` (opbouwperiode), daarna ${eur(r.al.p2)}`:''}, ${S.partnerMnd} maanden`),pad('Kinderalimentatie',`${eur(r.kindEff)} p/m${S.alimMode==='berekend'?`, daarna ${eur(r.al.k2)}`:''}`),pad('Gezinsinkomen (basis)',eur(r.al.ngi)),pad('Inkomen ex: opbouw / daarna',`${eur(S.exNu)} / ${eur(S.exVerdien)}`),pad('Zorgverdeling','50/50 co-ouderschap, kinderen 9 en 6 jaar'));
+  L.push('','AANDACHTSPUNTEN');
+  signals(r).forEach(x=>L.push('- '+x[1].replace(/<[^>]+>/g,'')));
+  L.push('','OPEN VRAGEN');
+  questions(r).forEach((x,i)=>L.push(`${i+1}. ${x}`));
+  L.push('','Indicatieve berekening, geen fiscaal of juridisch advies. Tarieven en fiscale behandeling laten bevestigen door accountant/fiscalist; verdeling vaststellen met advocaat en mediator.');
+  return L.join('\n');
+}
+
+renderNav();renderPanel();renderLive();
+</script>
