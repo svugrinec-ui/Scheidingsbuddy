@@ -123,7 +123,9 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 .ring .val span { font-size: 0.75rem; color: var(--fg-3); }
 .plist { display: grid; gap: 6px; }
 .plist .row { display: flex; justify-content: space-between; gap: 8px; align-items: center; font-size: 0.88rem; }
-.quarters { background: #faf6ee; border-radius: 22px; padding: 8px 4px 10px; border: 1px solid #ece3d2; }
+.quarters { background: transparent; color: var(--fg); padding: 4px 0 6px; }
+.quarters .wash { mix-blend-mode: multiply; }
+@media (prefers-color-scheme: dark) { .quarters .vline { filter: invert(1) brightness(.92); } .quarters .wash { mix-blend-mode: normal; } }
 .quarters svg { width: 100%; max-width: 440px; display: block; margin: 0 auto; }
 .balance { grid-template-columns: 1fr !important; }
 .tiles .tile { background: #000 !important; color: #f5f5f7 !important; border-color: #000; }
@@ -695,16 +697,16 @@ input[type="month"] { font: inherit; font-size: 16px; color: var(--fg); backgrou
   const LIMB = { relatie: { j: [405, 310], t: [165, 210], w: 38 }, werk: { j: [595, 310], t: [835, 212], w: 38 },
                  wonen: { j: [445, 560], t: [282, 878], w: 52 }, gezondheid: { j: [555, 560], t: [718, 878], w: 52 } };
   function quarters(el, ci, tot, prev) {
-    const W = 1000, Hd = 1000, CX = 500, CY = 497, R = 455, pad = 60, H = Hd + 400, INK = "#2b2118", SANG = "#b5502e", SERIF = "'Cormorant Garamond', Georgia, serif";
+    const W = 1000, Hd = 1000, CX = 500, CY = 497, R = 455, pad = 60, H = Hd + 400, INK = "currentColor", SANG = "#b5502e", SERIF = "'Cormorant Garamond', Georgia, serif";
     const lerp = (a, b, f) => [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f], k = gid++;
     let defs = `<filter id="bl${k}" x="-20%" y="-20%" width="140%" height="140%"><feTurbulence type="fractalNoise" baseFrequency=".035" numOctaves="3" seed="5"/><feDisplacementMap in="SourceGraphic" scale="10"/><feGaussianBlur stdDeviation="1.5"/></filter>`;
-    let wash = `<image href="vitruvius-lijn.png" x="0" y="0" width="${W}" height="${Hd}"/>`, top = "";
+    let wash = `<image class="vline" href="vitruvius-lijn.png" x="0" y="0" width="${W}" height="${Hd}"/>`, top = "";
     Object.entries(LIMB).forEach(([id, L]) => {
       const v = pillarVal(ci, id), M = lerp(L.j, L.t, MIN_SUPPORT / 10), col = EARTH[id];
       if (v != null) {
         const E = lerp(L.j, L.t, Math.max(v, 0.5) / 10), g = `lw${k}${id}`;
         defs += `<linearGradient id="${g}" gradientUnits="userSpaceOnUse" x1="${L.j[0]}" y1="${L.j[1]}" x2="${E[0]}" y2="${E[1]}"><stop offset="0" stop-color="${col}" stop-opacity=".18"/><stop offset="1" stop-color="${col}" stop-opacity=".62"/></linearGradient>`;
-        wash += `<line x1="${L.j[0]}" y1="${L.j[1]}" x2="${E[0]}" y2="${E[1]}" stroke="url(#${g})" stroke-width="${L.w}" stroke-linecap="round" filter="url(#bl${k})" style="mix-blend-mode:multiply"/>`;
+        wash += `<line x1="${L.j[0]}" y1="${L.j[1]}" x2="${E[0]}" y2="${E[1]}" stroke="url(#${g})" stroke-width="${L.w}" stroke-linecap="round" filter="url(#bl${k})" class="wash"/>`;
         if (v < MIN_SUPPORT) top += `<circle cx="${E[0]}" cy="${E[1]}" r="${L.w * .9}" fill="none" stroke="${SANG}" stroke-width="3" stroke-dasharray="26 6"/>`;
       }
       const dx = L.t[0] - L.j[0], dy = L.t[1] - L.j[1], l = Math.hypot(dx, dy), nx = -dy / l, ny = dx / l, h = L.w * .85;
@@ -719,7 +721,7 @@ input[type="month"] { font: inherit; font-size: 16px; color: var(--fg); backgrou
     order.forEach((id, i) => {
       const x = 140 + i * 240, v = pillarVal(ci, id), pv = prev ? pillarVal(prev, id) : null, col = EARTH[id];
       if (v != null) { const y = base - ch * v / 10;
-        cols += `<rect x="${x - cw / 2}" y="${y}" width="${cw}" height="${base - y}" fill="${col}" fill-opacity=".42" filter="url(#bl${k})" style="mix-blend-mode:multiply"/>`;
+        cols += `<rect x="${x - cw / 2}" y="${y}" width="${cw}" height="${base - y}" fill="${col}" fill-opacity=".42" filter="url(#bl${k})" class="wash"/>`;
         if (v < MIN_SUPPORT) cols += `<rect x="${x - cw / 2 - 4}" y="${y - 4}" width="${cw + 8}" height="${base - y + 8}" fill="none" stroke="${SANG}" stroke-width="3" stroke-dasharray="26 6"/>`; }
       cols += `<path d="M${x - cw / 2},${colTop} V${base} M${x + cw / 2},${colTop} V${base}" ${st(2.4)}/>`;
       for (let q = 1; q < 4; q++) cols += `<line x1="${x - cw / 2 + q * cw / 4}" y1="${colTop + 8}" x2="${x - cw / 2 + q * cw / 4}" y2="${base - 8}" ${st(1, .45)}/>`;
