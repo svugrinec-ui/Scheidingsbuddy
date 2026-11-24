@@ -36,3 +36,37 @@ $$;
 
 revoke all on function public.verwijder_mijn_account() from public, anon;
 grant execute on function public.verwijder_mijn_account() to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- Gegevens op elk toestel (toegevoegd 24 november 2026).
+-- Eén rij per gebruiker met ALLE app-gegevens, in de browser versleuteld (AES-GCM).
+-- De sleutel staat niet in Supabase maar komt van /api/sleutel (Vercel, SYNC_SECRET).
+
+create table if not exists public.gegevens (
+  user_id     uuid primary key references auth.users (id) on delete cascade,
+  inhoud      text not null,   -- versleuteld, base64
+  iv          text not null,   -- base64
+  bijgewerkt  timestamptz not null default now()
+);
+
+alter table public.gegevens enable row level security;
+
+drop policy if exists "eigen gegevens lezen" on public.gegevens;
+create policy "eigen gegevens lezen" on public.gegevens
+  for select to authenticated using (auth.uid() = user_id);
+
+drop policy if exists "eigen gegevens aanmaken" on public.gegevens;
+create policy "eigen gegevens aanmaken" on public.gegevens
+  for insert to authenticated with check (auth.uid() = user_id);
+
+drop policy if exists "eigen gegevens wijzigen" on public.gegevens;
+create policy "eigen gegevens wijzigen" on public.gegevens
+  for update to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+create or replace function public.zet_bijgewerkt()
+returns trigger language plpgsql set search_path = '' as $$
+begin new.bijgewerkt := now(); return new; end; $$;
+
+drop trigger if exists gegevens_bijgewerkt on public.gegevens;
+create trigger gegevens_bijgewerkt before update on public.gegevens
+  for each row execute function public.zet_bijgewerkt();
