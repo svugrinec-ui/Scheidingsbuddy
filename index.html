@@ -1375,6 +1375,7 @@ input[type="month"] { font: inherit; font-size: 16px; color: var(--fg); backgrou
     [/^(Relatie|Wonen|Werk|Gezondheid) ([\d,]+|–)$/, (m, a, b) => `${trName(a)} ${b}`],
     [/^([\d,]+) gemiddeld$/, (m, a) => `${a} average`],
     [/^([+−][\d,]+) sinds vorige week$/, (m, a) => `${a} since last week`],
+    [/^Versie (\d+)$/, (m, a) => `Version ${a}`],
     [/^Vorige keer: (.+)$/, (m, a) => `Last time: ${a}`],
     [/^Eerstvolgende stap: (.+)$/, (m, a) => `Next step: ${a}`],
     [/^: daalt al vier weken, van ([\d,]+) naar ([\d,]+)\.$/, (m, a, b) => `: has been falling for four weeks, from ${a} to ${b}.`],
