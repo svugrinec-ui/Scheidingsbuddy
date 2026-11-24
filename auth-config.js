@@ -3,6 +3,6 @@
 // wordt beschermd door Row Level Security. Zet hier NOOIT de service_role-key.
 // Leeg = inloggen staat uit en de app werkt zoals voorheen.
 window.SB_AUTH = {
-  url: "",        // Supabase → Project Settings → API → Project URL, bv. "https://abcd1234.supabase.co"
+  url: "https://xcljqutfxhhsluvbzqsa.supabase.co",// Supabase → Project Settings → API → Project URL, bv. "https://abcd1234.supabase.co"
   anonKey: "",    // Supabase → Project Settings → API Keys → publishable (of anon public) key
 };
