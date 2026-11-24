@@ -14,7 +14,7 @@
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,650&family=Inter:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,650&family=Cormorant+Garamond:ital,wght@1,500;1,600&family=Inter:wght@400;500;600&display=swap">
 <style>
 /* Layout: one calm column (max 720px), bottom tab bar like a phone app, summary before detail. */
 :root {
@@ -123,7 +123,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 .ring .val span { font-size: 0.75rem; color: var(--fg-3); }
 .plist { display: grid; gap: 6px; }
 .plist .row { display: flex; justify-content: space-between; gap: 8px; align-items: center; font-size: 0.88rem; }
-.quarters { background: #000; border-radius: 22px; padding: 10px 6px; }
+.quarters { background: radial-gradient(ellipse at 50% 35%, #f3e9d1 0%, #ecdfc1 65%, #dcc69a 100%); border-radius: 22px; padding: 6px 4px 10px; box-shadow: inset 0 0 40px rgba(120, 80, 30, .2); }
 .quarters svg { width: 100%; max-width: 440px; display: block; margin: 0 auto; }
 .balance { grid-template-columns: 1fr !important; }
 .tiles .tile { background: #000 !important; color: #f5f5f7 !important; border-color: #000; }
@@ -346,7 +346,7 @@ input[type="month"] { font: inherit; font-size: 16px; color: var(--fg); backgrou
         <h2>Mijn balans</h2>
         <div class="balance">
           <div class="quarters" id="quarters"></div>
-          <div class="plist" id="pillarList"></div>
+          <div class="plist" id="pillarList" hidden></div>
         </div>
         <p class="small muted" id="balanceHint"></p>
       </div>
@@ -689,39 +689,49 @@ input[type="month"] { font: inherit; font-size: 16px; color: var(--fg); backgrou
   const MIN_SUPPORT = 5;
   let gid = 0;
   // Vitruvian figure: arms are Relatie and Werk, legs Wonen and Gezondheid. A limb touching the circle is a 10; the dashed line is the minimum.
-  function quarters(el, ci, tot) {
-    const W = 430, H = 360, cx = 215, cy = 182, R = 136, INK = "#f5f5f7", WARN = "#ff9f0a";
-    const LIMBS = [{ id: "relatie", deg: 196, j: "sh" }, { id: "werk", deg: 344, j: "sh" }, { id: "wonen", deg: 118, j: "hip" }, { id: "gezondheid", deg: 62, j: "hip" }];
-    const J = { sh: [cx, cy - 52], hip: [cx, cy + 16] };
-    const hit = (j, t) => { const dx = Math.cos(t), dy = Math.sin(t), ox = j[0] - cx, oy = j[1] - cy, b = ox * dx + oy * dy, c = ox * ox + oy * oy - R * R, k = -b + Math.sqrt(b * b - c); return [j[0] + dx * k, j[1] + dy * k]; };
-    const geo = LIMBS.map(l => { const t = l.deg * Math.PI / 180, j = J[l.j], F = hit(j, t); return { ...l, t, jp: j, F, at: f => [j[0] + (F[0] - j[0]) * f, j[1] + (F[1] - j[1]) * f] }; });
-    let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Balans per pilaar: ${PILLARS.map(p => `${p.name} ${fmt(pillarVal(ci, p.id))}`).join(", ")}"><defs>`;
-    const ids = geo.map(g => { const id = "vg" + (gid++); s += `<linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="${g.jp[0]}" y1="${g.jp[1]}" x2="${g.F[0]}" y2="${g.F[1]}"><stop offset="0" stop-color="${VIVID[g.id][0]}"/><stop offset="1" stop-color="${VIVID[g.id][1]}"/></linearGradient>`; return id; });
-    s += `</defs>`;
-    const sq = R * 1.62, sy = cy - R * 0.62;
-    s += `<rect x="${cx - sq / 2}" y="${sy}" width="${sq}" height="${sq}" fill="none" stroke="${INK}" stroke-opacity=".16" stroke-width="1.5"/>`;
-    s += `<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="${INK}" stroke-opacity=".42" stroke-width="2"/>`;
-    const mp = [0, 1, 3, 2].map(i => geo[i].at(MIN_SUPPORT / 10));
-    let d = `M${mp[0][0]},${mp[0][1]}`;
-    for (let k = 0; k < 4; k++) { const p0 = mp[(k + 3) % 4], p1 = mp[k], p2 = mp[(k + 1) % 4], p3 = mp[(k + 2) % 4];
-      d += ` C${p1[0] + (p2[0] - p0[0]) / 6},${p1[1] + (p2[1] - p0[1]) / 6} ${p2[0] - (p3[0] - p1[0]) / 6},${p2[1] - (p3[1] - p1[1]) / 6} ${p2[0]},${p2[1]}`; }
-    s += `<path d="${d}Z" fill="none" stroke="${INK}" stroke-opacity=".55" stroke-width="1.5" stroke-dasharray="5 6"/>`;
-    s += `<text x="${mp[1][0] + 8}" y="${mp[1][1] + 26}" font-size="9.5" font-weight="700" fill="#98989f" font-family="Inter,-apple-system,system-ui">MIN ${MIN_SUPPORT}</text>`;
-    geo.forEach((g, i) => {
-      const v = pillarVal(ci, g.id), [a, b] = VIVID[g.id];
-      s += `<line x1="${g.jp[0]}" y1="${g.jp[1]}" x2="${g.F[0]}" y2="${g.F[1]}" stroke="${a}" stroke-opacity=".2" stroke-width="15" stroke-linecap="round"/>`;
+  // Leonardo's own Vitruvian man (leonardo.jpg, 790x840 crop), pillar washes on the raised arms and spread legs, four columns underneath.
+  const EARTH = { relatie: "#b0402a", wonen: "#3f7d55", werk: "#35598c", gezondheid: "#c08a22" };
+  const LIMB = { relatie: { j: [318, 262], t: [112, 166], w: 30 }, werk: { j: [472, 262], t: [682, 168], w: 30 },
+                 wonen: { j: [362, 462], t: [216, 716], w: 40 }, gezondheid: { j: [432, 462], t: [582, 716], w: 40 } };
+  function quarters(el, ci, tot, prev) {
+    const W = 790, Hd = 840, CX = 395, CY = 400, R = 368, pad = 90, H = Hd + 345, INK = "#3e2a1a", SANG = "#b5502e", SERIF = "'Cormorant Garamond', Georgia, serif";
+    const lerp = (a, b, f) => [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f], k = gid++;
+    let defs = `<filter id="bl${k}" x="-20%" y="-20%" width="140%" height="140%"><feTurbulence type="fractalNoise" baseFrequency=".035" numOctaves="3" seed="5"/><feDisplacementMap in="SourceGraphic" scale="10"/><feGaussianBlur stdDeviation="1.5"/></filter>`;
+    let wash = `<image href="leonardo.jpg" x="0" y="0" width="${W}" height="${Hd}" style="mix-blend-mode:multiply"/>`, top = "";
+    Object.entries(LIMB).forEach(([id, L]) => {
+      const v = pillarVal(ci, id), M = lerp(L.j, L.t, MIN_SUPPORT / 10), col = EARTH[id];
       if (v != null) {
-        const E = g.at(Math.max(v, 1) / 10);
-        s += `<line x1="${g.jp[0]}" y1="${g.jp[1]}" x2="${E[0]}" y2="${E[1]}" stroke="url(#${ids[i]})" stroke-width="15" stroke-linecap="round"/><circle cx="${E[0]}" cy="${E[1]}" r="7.5" fill="${b}"/>`;
-        if (v < MIN_SUPPORT) s += `<circle cx="${E[0]}" cy="${E[1]}" r="13" fill="none" stroke="${WARN}" stroke-width="2.5"/>`;
+        const E = lerp(L.j, L.t, Math.max(v, 0.5) / 10), g = `lw${k}${id}`;
+        defs += `<linearGradient id="${g}" gradientUnits="userSpaceOnUse" x1="${L.j[0]}" y1="${L.j[1]}" x2="${E[0]}" y2="${E[1]}"><stop offset="0" stop-color="${col}" stop-opacity=".18"/><stop offset="1" stop-color="${col}" stop-opacity=".62"/></linearGradient>`;
+        wash += `<line x1="${L.j[0]}" y1="${L.j[1]}" x2="${E[0]}" y2="${E[1]}" stroke="url(#${g})" stroke-width="${L.w}" stroke-linecap="round" filter="url(#bl${k})" style="mix-blend-mode:multiply"/>`;
+        if (v < MIN_SUPPORT) top += `<circle cx="${E[0]}" cy="${E[1]}" r="${L.w * .9}" fill="none" stroke="${SANG}" stroke-width="3" stroke-dasharray="26 6"/>`;
       }
-      const Lx = g.F[0] + Math.cos(g.t) * 16, Ly = g.F[1] + Math.sin(g.t) * 16;
-      const anchor = Math.cos(g.t) < -0.2 ? "end" : Math.cos(g.t) > 0.2 ? "start" : "middle", dy = Math.sin(g.t) > 0.5 ? 12 : Math.sin(g.t) < -0.5 ? -4 : 4;
-      s += `<text x="${Lx}" y="${Ly + dy}" text-anchor="${anchor}" font-family="Inter,-apple-system,system-ui"><tspan font-size="10" font-weight="700" letter-spacing=".5" fill="${b}">${P(g.id).name.toUpperCase()}</tspan><tspan x="${Lx}" dy="15" font-size="15" font-weight="700" fill="${INK}">${fmt(v)}</tspan></text>`;
+      const dx = L.t[0] - L.j[0], dy = L.t[1] - L.j[1], l = Math.hypot(dx, dy), nx = -dy / l, ny = dx / l, h = L.w * .85;
+      top += `<line x1="${M[0] + nx * h}" y1="${M[1] + ny * h}" x2="${M[0] - nx * h}" y2="${M[1] - ny * h}" stroke="${INK}" stroke-width="3" stroke-dasharray="5 4" stroke-linecap="round"/>`;
+      const a = Math.atan2(L.t[1] - CY, L.t[0] - CX), lx = CX + Math.cos(a) * (R + 30), ly = CY + Math.sin(a) * (R + 30), up = Math.sin(a) < 0;
+      top += `<text x="${lx}" y="${ly + (up ? -40 : 20)}" text-anchor="${Math.cos(a) < 0 ? "end" : "start"}" font-family="${SERIF}" font-style="italic" font-weight="600"><tspan font-size="30" fill="${col}">${P(id).name}</tspan><tspan x="${lx}" dy="34" font-size="36" fill="${INK}">${fmt(v)}</tspan></text>`;
     });
-    s += `<line x1="${cx}" y1="${cy - 62}" x2="${cx}" y2="${cy + 20}" stroke="${INK}" stroke-width="15" stroke-linecap="round"/><circle cx="${cx}" cy="${cy - 88}" r="16" fill="${INK}"/>`;
-    s += `<text x="${cx}" y="${cy - 116}" text-anchor="middle" font-size="12" font-weight="700" fill="#98989f" font-family="Inter,-apple-system,system-ui">${fmt(tot)} GEMIDDELD</text>`;
-    el.innerHTML = s + `</svg>`;
+    // columns: left to right in the order of the limbs (left arm, left leg, right leg, right arm)
+    const order = ["relatie", "wonen", "gezondheid", "werk"], cw = 80, y0 = Hd + 30, colTop = y0 + 40, base = y0 + 230, ch = base - colTop;
+    const st = (w, o = 1) => `fill="none" stroke="${INK}" stroke-width="${w}" stroke-opacity="${o}" stroke-linecap="round"`;
+    let cols = `<line x1="40" y1="${base + 14}" x2="750" y2="${base + 14}" ${st(3)}/><line x1="50" y1="${base + 22}" x2="740" y2="${base + 22}" ${st(1.5, .6)}/>`;
+    order.forEach((id, i) => {
+      const x = 130 + i * 177, v = pillarVal(ci, id), pv = prev ? pillarVal(prev, id) : null, col = EARTH[id];
+      if (v != null) { const y = base - ch * v / 10;
+        cols += `<rect x="${x - cw / 2}" y="${y}" width="${cw}" height="${base - y}" fill="${col}" fill-opacity=".42" filter="url(#bl${k})" style="mix-blend-mode:multiply"/>`;
+        if (v < MIN_SUPPORT) cols += `<rect x="${x - cw / 2 - 4}" y="${y - 4}" width="${cw + 8}" height="${base - y + 8}" fill="none" stroke="${SANG}" stroke-width="3" stroke-dasharray="26 6"/>`; }
+      cols += `<path d="M${x - cw / 2},${colTop} V${base} M${x + cw / 2},${colTop} V${base}" ${st(2.4)}/>`;
+      for (let q = 1; q < 4; q++) cols += `<line x1="${x - cw / 2 + q * cw / 4}" y1="${colTop + 8}" x2="${x - cw / 2 + q * cw / 4}" y2="${base - 8}" ${st(1, .45)}/>`;
+      cols += `<path d="M${x - cw / 2 - 12},${colTop} h${cw + 24} M${x - cw / 2 - 6},${colTop - 10} h${cw + 12} M${x - cw / 2 - 12},${colTop} q-12,-12 0,-18 M${x + cw / 2 + 12},${colTop} q12,-12 0,-18 M${x - cw / 2 - 10},${base} h${cw + 20} M${x - cw / 2 - 14},${base + 7} h${cw + 28}" ${st(2.2)}/>`;
+      if (pv != null) { const yp = base - ch * pv / 10; cols += `<line x1="${x - cw / 2 - 8}" y1="${yp}" x2="${x + cw / 2 + 8}" y2="${yp}" stroke="${INK}" stroke-width="4" stroke-linecap="round"/>`; }
+      const d = v != null && pv != null ? v - pv : null;
+      cols += `<text x="${x}" y="${colTop - 30}" text-anchor="middle" font-family="${SERIF}" font-style="italic" font-weight="600" font-size="28" fill="${col}">${P(id).name}</text>`;
+      cols += `<text x="${x}" y="${base + 58}" text-anchor="middle" font-family="${SERIF}" font-style="italic" font-weight="600" font-size="32" fill="${INK}">${fmt(v)}${d != null && Math.abs(d) >= 0.05 ? ` <tspan font-size="24" fill="${d > 0 ? "#3d7a3a" : SANG}">${d > 0 ? "+" : "−"}${fmt(Math.abs(d))}</tspan>` : ""}</text>`;
+    });
+    const ym = base - ch * MIN_SUPPORT / 10;
+    cols += `<line x1="50" y1="${ym}" x2="740" y2="${ym}" ${st(2, .75)} stroke-dasharray="8 9"/><text x="40" y="${ym + 8}" text-anchor="end" font-family="${SERIF}" font-style="italic" font-size="24" fill="${INK}">${MIN_SUPPORT}</text>`;
+    const avgTxt = `<text x="${W / 2}" y="${H - 4}" text-anchor="middle" font-family="${SERIF}" font-style="italic" font-size="26" fill="${INK}" fill-opacity=".75">${fmt(tot)} gemiddeld</text>`;
+    el.innerHTML = `<svg viewBox="${-pad} 0 ${W + pad * 2} ${H + 10}" role="img" aria-label="Balans per pilaar: ${PILLARS.map(p => `${p.name} ${fmt(pillarVal(ci, p.id))}`).join(", ")}"><defs>${defs}</defs>${wash}${top}${cols}${avgTxt}</svg>`;
   }
   function miniRing(id, v) {
     const r = 36, w = 13, c = 2 * Math.PI * r, f = Math.max(0, Math.min(1, (v || 0) / 10)), gidr = "rg" + (gid++), [a, b] = VIVID[id];
@@ -820,12 +830,12 @@ input[type="month"] { font: inherit; font-size: 16px; color: var(--fg); backgrou
     // total + radar
     const cur = PILLARS.map(p => pillarVal(latest, p.id));
     const tot = avg(cur);
-    quarters($("quarters"), latest, tot);
+    quarters($("quarters"), latest, tot, prev);
     $("pillarList").innerHTML = `<span class="label">Score per pilaar</span>` + PILLARS.map((p, i) => {
       const pv = prev ? pillarVal(prev, p.id) : null, d = cur[i] != null && pv != null ? cur[i] - pv : null;
       return `<div class="row"><span>${chip(p.id)}</span><span class="num">${fmt(cur[i])}${d != null && Math.abs(d) >= 0.05 ? ` <span class="small delta ${d > 0 ? "up" : "down"}">${d > 0 ? "+" : "−"}${fmt(Math.abs(d))}</span>` : ""}</span></div>`;
     }).join("");
-    $("balanceHint").textContent = `Je armen zijn Relatie en Werk, je benen Wonen en Gezondheid. Raakt een ledemaat de cirkel, dan is dat een 10. De stippellijn is je minimum van ${MIN_SUPPORT}. Week ${weekNum(latest.key)}${prev ? `, verschil met week ${weekNum(prev.key)}` : ""}.`;
+    $("balanceHint").textContent = `Naar Leonardo da Vinci. De opgeheven armen zijn Relatie en Werk, de gespreide benen Wonen en Gezondheid. Een ledemaat kleurt in tot je cijfer en raakt de cirkel bij een 10. Het gestippelde streepje is je minimum van ${MIN_SUPPORT}, het donkere streepje op een zuil is vorige week. Week ${weekNum(latest.key)}${prev ? `, verschil met week ${weekNum(prev.key)}` : ""}.`;
 
     // tiles
     const view = ui.range === "12" ? S.slice(-12) : S;
