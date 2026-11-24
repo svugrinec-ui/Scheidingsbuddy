@@ -558,7 +558,7 @@ input[type="month"] { font: inherit; font-size: 16px; color: var(--fg); backgrou
       </div>
       <span class="status" id="backupStatus" role="status"></span>
     </div>
-    <p class="small muted" style="text-align:center">Versie 12</p>
+    <p class="small muted" style="text-align:center">Versie 13</p>
   </section>
 </div>
 
@@ -1356,7 +1356,7 @@ input[type="month"] { font: inherit; font-size: 16px; color: var(--fg); backgrou
     "Werk je bufferstand en geplande uitgaven bij": "Update your buffer balance and planned expenses", "Zet de volgende stap richting de mediator op papier": "Write down the next step towards the mediator",
     "Zet de volgende stap voor je woning (bezichtiging, hypotheekadviseur)": "Take the next step for your home (viewing, mortgage adviser)", "Zet twee keer bewegen in je agenda": "Put two workouts in your calendar",
     "daalt al vier weken": "has been falling for four weeks", "je verwacht al drie keer dat het slechter wordt": "you've expected it to get worse three times in a row", "je verwacht dat het slechter wordt": "you expect it to get worse",
-    "Scheidingsbuddy back-up": "Scheidingsbuddy backup", "Eerste week": "First week", "Gelijk aan vorige week": "Same as last week", "van 10": "out of 10", "Versie 12": "Version 12", "Weergave: automatisch": "Appearance: automatic", "Weergave: licht": "Appearance: light", "Weergave: donker": "Appearance: dark",
+    "Scheidingsbuddy back-up": "Scheidingsbuddy backup", "Eerste week": "First week", "Gelijk aan vorige week": "Same as last week", "van 10": "out of 10", "Versie 13": "Version 12", "Weergave: automatisch": "Appearance: automatic", "Weergave: licht": "Appearance: light", "Weergave: donker": "Appearance: dark",
   };
   const MONTHS_EN = { jan: "Jan", feb: "Feb", mrt: "Mar", apr: "Apr", mei: "May", jun: "Jun", jul: "Jul", aug: "Aug", sep: "Sep", okt: "Oct", nov: "Nov", dec: "Dec",
     januari: "January", februari: "February", maart: "March", april: "April", juni: "June", juli: "July", augustus: "August", september: "September", oktober: "October", november: "November", december: "December" };
@@ -1454,7 +1454,14 @@ input[type="month"] { font: inherit; font-size: 16px; color: var(--fg); backgrou
   load(); showNotice();
   { const d = new Date(); d.setMonth(d.getMonth() + 1); $("planMonth").value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`; }
   route();
-  if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
+  // Service worker: check for a new version whenever the app comes back to the foreground, and reload once when it takes over.
+  if ("serviceWorker" in navigator && location.protocol === "https:") {
+    const hadController = !!navigator.serviceWorker.controller; let reloaded = false;
+    navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(reg => {
+      document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") reg.update().catch(() => {}); });
+    }).catch(() => {});
+    navigator.serviceWorker.addEventListener("controllerchange", () => { if (hadController && !reloaded) { reloaded = true; location.reload(); } });
+  }
 })();
 </script>
 </body>
