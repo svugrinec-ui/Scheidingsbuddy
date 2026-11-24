@@ -44,7 +44,7 @@
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --bg: #10161a; --surface: #182126; --surface-2: #212c31; --line: #2e3a40;
     --fg: #e8eef0; --fg-2: #b3c0c5; --fg-3: #8a9aa3;
     --accent: #6fb8bb; --accent-ink: #0f2224; --accent-soft: #1d3436;
@@ -53,6 +53,15 @@
     --tint: 20%;
     color-scheme: dark;
   }
+}
+:root[data-theme="dark"] {
+    --bg: #10161a; --surface: #182126; --surface-2: #212c31; --line: #2e3a40;
+    --fg: #e8eef0; --fg-2: #b3c0c5; --fg-3: #8a9aa3;
+    --accent: #6fb8bb; --accent-ink: #0f2224; --accent-soft: #1d3436;
+    --warn: #e9b155; --warn-soft: #3a2c14; --good: #74c98a; --good-soft: #1b3322;
+    --p-relatie: #d95926; --p-wonen: #199e70; --p-werk: #3987e5; --p-gezondheid: #c98500;
+    --tint: 20%;
+    color-scheme: dark;
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; }
@@ -82,6 +91,15 @@ p { margin: 0; }
 [hidden] { display: none !important; }
 
 header.top { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 4px 16px; }
+header.top { display: grid; gap: 2px; }
+.toprow { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.prefs { display: flex; align-items: center; gap: 8px; }
+.pref, .seg button { font: inherit; font-size: .78rem; font-weight: 600; color: var(--fg-2); background: var(--surface); border: 1px solid var(--line); cursor: pointer; }
+.pref { width: 34px; height: 34px; border-radius: 99px; display: grid; place-items: center; padding: 0; }
+.pref svg { width: 18px; height: 18px; }
+.seg { display: flex; border-radius: 99px; overflow: hidden; border: 1px solid var(--line); }
+.seg button { border: 0; padding: 7px 10px; background: var(--surface); }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
 .weekline { color: var(--fg-2); font-size: 0.88rem; }
 
 /* bottom nav */
@@ -126,7 +144,8 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 .quarters { background: transparent; color: var(--fg); padding: 4px 0 6px; }
 .quarters .wash { mix-blend-mode: multiply; }
 .quarters .vline-d { display: none; }
-@media (prefers-color-scheme: dark) { .quarters .vline-l { display: none; } .quarters .vline-d { display: inline; } .quarters .wash { mix-blend-mode: normal; } }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .quarters .vline-l { display: none; } :root:not([data-theme="light"]) .quarters .vline-d { display: inline; } :root:not([data-theme="light"]) .quarters .wash { mix-blend-mode: normal; } }
+:root[data-theme="dark"] .quarters .vline-l { display: none; } :root[data-theme="dark"] .quarters .vline-d { display: inline; } :root[data-theme="dark"] .quarters .wash { mix-blend-mode: normal; }
 .quarters svg { width: 100%; max-width: 440px; display: block; margin: 0 auto; }
 .balance { grid-template-columns: 1fr !important; }
 .tiles .tile { background: #000 !important; color: #f5f5f7 !important; border-color: #000; }
@@ -306,6 +325,7 @@ input[type="month"] { font: inherit; font-size: 16px; color: var(--fg); backgrou
 .nba .actions .btn { padding: 8px 14px; }
 .motto { text-align: center; font-family: var(--font-display); font-size: 0.95rem; color: var(--fg-3); padding: 6px 12px; }
 </style>
+<script>try { const t = localStorage.getItem("sb-theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; const l = localStorage.getItem("sb-lang"); if (l === "en") document.documentElement.lang = "en"; } catch (e) {}</script>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -322,7 +342,13 @@ input[type="month"] { font: inherit; font-size: 16px; color: var(--fg); backgrou
 
 <div class="wrap">
   <header class="top">
-    <h1>Scheidingsbuddy</h1>
+    <div class="toprow">
+      <h1>Scheidingsbuddy</h1>
+      <div class="prefs">
+        <button type="button" class="pref" id="themeBtn" aria-label="Weergave: automatisch"></button>
+        <div class="seg" role="group" aria-label="Taal"><button type="button" data-lang="nl">NL</button><button type="button" data-lang="en">EN</button></div>
+      </div>
+    </div>
     <span class="weekline" id="weekline"></span>
   </header>
   <div id="storeNotice" class="notice" hidden></div>
@@ -1246,6 +1272,172 @@ input[type="month"] { font: inherit; font-size: 16px; color: var(--fg); backgrou
   let rt; window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => { if (!$("view-overzicht").hidden) renderOverview(); }, 150); });
   window.matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", () => route());
   window.addEventListener("storage", e => { if (e.key === KEY) { load(); route(); } });
+
+  // ---------- language (NL / EN) ----------
+  // The app is written in Dutch. In English mode every rendered text node and label is translated on the fly;
+  // anything not in the list (your own notes and tasks) stays as you typed it.
+  const EN = {
+    "Scheidingsbuddy": "Scheidingsbuddy", "Taal": "Language", "Overzicht": "Overview", "Focus": "Focus", "Check-in": "Check-in", "Terugblik": "Review",
+    "Relatie": "Relationship", "Wonen": "Home", "Werk": "Work", "Gezondheid": "Health",
+    "Relatie & verbinding": "Relationship & connection", "Wonen & leefomgeving": "Home & surroundings", "Werk & financiën": "Work & finances", "Gezondheid": "Health",
+    "Kinderen": "Children", "Co-ouderschap": "Co-parenting", "Afwikkeling scheiding": "Settling the divorce", "Familie & vrienden": "Family & friends",
+    "Woonzekerheid": "Housing security", "Rust in huis": "Peace at home", "Thuisgevoel & comfort": "Feeling at home", "Fijne woonomgeving": "Pleasant surroundings",
+    "Werkplezier & uitdaging": "Enjoyment & challenge", "Opdrachten & pipeline": "Assignments & pipeline", "Inkomen & buffer": "Income & buffer", "Vrijheid & autonomie": "Freedom & autonomy",
+    "Fysieke gezondheid": "Physical health", "Mentale rust": "Peace of mind", "Energie & slaap": "Energy & sleep", "Leefstijl & beweging": "Lifestyle & exercise",
+    "Tijd, contact en band met de kinderen": "Time, contact and bond with the children", "Samenwerking en afspraken met Samara": "Cooperation and agreements with Samara",
+    "Steun en mensen om je heen": "Support and people around you", "Nieuwe woning, huur of koop": "New home, rent or buy", "Spanning in de huidige woonsituatie": "Tension in the current living situation",
+    "Ook voor de kinderen": "For the children too", "Energie uit je werk": "Energy from your work", "Freelanceklussen, nieuwe klanten": "Freelance jobs, new clients",
+    "Eigen regie over je tijd en keuzes": "Control over your time and choices", "Rust, herstel, fit zijn": "Rest, recovery, being fit",
+    "Hoe goed is mijn band met de kinderen nu?": "How good is my bond with the children right now?", "Hoe soepel lopen de afspraken met Samara?": "How smoothly do agreements with Samara go?",
+    "Hoeveel grip heb ik op de afwikkeling van de scheiding?": "How much grip do I have on settling the divorce?", "Hoe gesteund voel ik me door familie en vrienden?": "How supported do I feel by family and friends?",
+    "Hoe zeker ben ik van mijn volgende woning?": "How sure am I of my next home?", "Hoeveel rust heb ik thuis?": "How much peace do I have at home?",
+    "Hoe thuis voelen de kinderen en ik ons waar we nu wonen?": "How at home do the children and I feel where we live now?", "Hoe prettig vind ik mijn woonomgeving?": "How pleasant do I find my surroundings?",
+    "Hoeveel energie geeft mijn werk me?": "How much energy does my work give me?", "Hoe zeker is mijn werk voor de komende maanden?": "How secure is my work for the coming months?",
+    "Hoeveel financiële rust heb ik?": "How much financial peace do I have?", "Hoeveel regie heb ik over mijn tijd en keuzes?": "How much control do I have over my time and choices?",
+    "Hoe fit voel ik me?": "How fit do I feel?", "Hoe rustig is het in mijn hoofd?": "How calm is my mind?", "Hoe goed slaap en herstel ik?": "How well do I sleep and recover?",
+    "Hoe goed zorg ik voor mezelf met eten, bewegen en drinken?": "How well do I look after myself with food, exercise and drinking?",
+    "Eerstvolgende stap": "Next step", "Mijn eerstvolgende stap": "My next step", "Naar focuslijst": "To focus list", "Nog geen check-ins": "No check-ins yet",
+    "Eén keer per week, een minuut of vijf. Geef per onderdeel aan hoe het ervoor staat, hoe je je erover voelt en welke kant het op gaat. Na een paar weken zie je hier je trends.": "Once a week, about five minutes. Rate how each area is doing. After a few weeks you'll see your trends here.",
+    "Voorbeeld, geen echte scores": "Example, not real scores", "Voorbeeldgrafiek, geen echte scores": "Example chart, not real scores", "Eerste check-in doen": "Do your first check-in",
+    "Mijn balans": "My balance", "Score per pilaar": "Score per pillar", "Balans per pilaar": "Balance per pillar", "Ontwikkeling": "Progress", "Verloop": "Trend",
+    "12 weken": "12 weeks", "Alles": "All", "Cijfer per pilaar per week": "Score per pillar per week", "Signalen": "Signals", "Vraagt nu aandacht": "Needs attention now",
+    "Een lage score geeft hier geen signaal. Alleen een daling die een paar weken aanhoudt, of een richting die je drie keer op rij als ↓ geeft.": "A low score alone doesn't trigger a signal here. Only a decline that lasts a few weeks, or an expectation you mark ↓ three times in a row.",
+    "Wat wordt sterker?": "What is getting stronger?", "Geen aanhoudende negatieve trends.": "No lasting negative trends.", "Laatste notities": "Latest notes",
+    "uit je laatste check-in": "from your latest check-in", "Onderdeel": "Area", "Onderdelen": "Areas", "Pilaar": "Pillar", "Cijfer": "Score", "Verw.": "Exp.",
+    "Verwachting": "Expectation", "↑ beter": "↑ better", "→ gelijk": "→ same", "↓ slechter": "↓ worse", "Geen richting ingevuld": "No expectation given",
+    "Nu": "Now", "Later": "Later", "Gedaan": "Done", "gedaan": "done", "Nu mee bezig": "Working on now", "Op mijn lijst voor nu": "On my list for now", "Naar later": "Move to later",
+    "Nieuwe taak": "New task", "Toevoegen": "Add", "Bijvoorbeeld: hypotheekadviseur bellen": "For example: call the mortgage adviser", "Houd dit kort, drie tot vijf dingen": "Keep this short, three to five things",
+    "Markeer als gedaan": "Mark as done", "Verwijderen": "Delete", "Stap gedaan": "Step done", "Stap toevoegen": "Add step", "Stap verwijderen": "Remove step", "Nieuwe naam": "New name",
+    "Volgende stap toevoegen": "Add next step", "Wat moet er gebeuren?": "What needs to happen?", "Nog niets afgevinkt.": "Nothing ticked off yet.",
+    "Niets voor later. Zet het ster-icoon uit om iets hierheen te verplaatsen.": "Nothing for later. Turn off the star to move something here.",
+    "Je lijst voor nu is leeg": "Your list for now is empty", "Alles wat moest, is gedaan. Geniet ervan, of kies iets van Later.": "Everything that had to be done is done. Enjoy it, or pick something from Later.",
+    "Elk punt dat je afvinkt, hoef je niet meer in je hoofd te houden.": "Every item you tick off is one less thing to keep in your head.",
+    "Buffer & grote uitgaven": "Buffer & big expenses", "Buffer op aparte rekening": "Buffer in a separate account", "Huidige stand (€)": "Current balance (€)", "Doel (€)": "Goal (€)",
+    "Privé maandlasten (€)": "Monthly personal costs (€)", "Wat je per maand nodig hebt": "What you need per month", "Bijwerken": "Update", "Bijgewerkt.": "Updated.", "Bewaard.": "Saved.",
+    "Stand, doel en maandlasten aanpassen": "Edit balance, goal and monthly costs", "Geplande grote uitgaven": "Planned big expenses", "Nog geen geplande uitgaven.": "No planned expenses yet.",
+    "Wat": "What", "Bedrag (€)": "Amount (€)", "Wanneer": "When", "Maand": "Month", "Week": "Week", "Bijvoorbeeld: schilder, vloer, notaris": "For example: painter, floor, notary",
+    "Uitgave toevoegen": "Add expense", "Vul wat, bedrag en maand in.": "Fill in what, amount and month.", "Betaald": "Paid",
+    "Zet grote uitgaven er vooraf in. Dan zie je wat je per maand opzij moet zetten, zodat ze je niet meer overvallen.": "Add big expenses in advance. You'll see what to set aside each month, so they no longer catch you off guard.",
+    "Maandritme": "Monthly rhythm", "Elke maand hetzelfde ritme: een vaste uitkering uit de bv, en wat overblijft gaat naar de rc-aflossing en tegenvallers.": "The same rhythm every month: a fixed payout from the company, and whatever is left goes to paying off the current account and setbacks.",
+    "Vaste uitkering uit de bv (€ per maand)": "Fixed payout from the company (€ per month)", "Vaste uitkering uit de bv gedaan": "Fixed payout from the company done", "Geplande uitgaven bekeken": "Planned expenses reviewed",
+    "Bufferstand bijgewerkt": "Buffer balance updated", "Rest naar rc-aflossing of buffer": "Rest to current-account repayment or buffer",
+    "Vul je privé maandlasten in, dan zie je hoeveel maanden je zonder klus kunt.": "Fill in your monthly personal costs to see how many months you can go without a job.",
+    "Check-in deze week": "Check-in this week", "Deze week is al ingevuld. Je kunt hem aanpassen.": "This week is already filled in. You can change it.",
+    "Geef per vraag één cijfer: 1 is helemaal niet, 10 is volledig. Het verschil met vorige week ziet de app zelf. Bij verwachting geef je aan waar het de komende weken heen gaat, los van het cijfer van nu. Die is optioneel. Wat je niet invult, telt niet mee.": "Give one score per question: 1 is not at all, 10 is completely. The app works out the change from last week itself. Under expectation you say where things are heading in the coming weeks, separate from today's score. That part is optional. Anything you leave empty doesn't count.",
+    "Je cijfers van vorige keer staan klaar. Pas alleen aan wat anders is. De verwachting is optioneel.": "Your scores from last time are filled in. Only change what's different. The expectation is optional.",
+    "Notities, wat speelt er?": "Notes, what's going on?", "Reflectie": "Reflection", "Wat gaat er goed?": "What is going well?", "Wat vraagt aandacht?": "What needs attention?",
+    "Ook op mijn focuslijst zetten": "Also put it on my focus list", "Check-in bewaren": "Save check-in", "Nog niet bewaard": "Not saved yet", "Nog niet ingevuld": "Not filled in yet",
+    "Je stap staat op je focuslijst.": "Your step is on your focus list.", "Vul minstens één onderdeel of een reflectie in.": "Fill in at least one area or a reflection.",
+    "Bewaren lukte niet.": "Saving failed.", "Bewaren lukte niet. Open de app vanaf je beginscherm en probeer het opnieuw.": "Saving failed. Open the app from your home screen and try again.",
+    "Maandelijkse terugblik": "Monthly review", "Een kwartiertje per maand. Kijk naar de cijfers en schrijf op wat je opvalt.": "Fifteen minutes a month. Look at the numbers and write down what stands out.",
+    "Deze maand tegenover vorige maand": "This month compared with last month", "Gemiddeld": "Average", "Grootste verschuivingen": "Biggest shifts",
+    "Wat wil ik aanpassen?": "What do I want to change?", "Welke pilaar krijgt te weinig aandacht?": "Which pillar is getting too little attention?",
+    "Kwartaalvraag: past mijn leven nog bij het leven dat ik wil leiden?": "Quarterly question: does my life still fit the life I want to lead?", "Terugblik bewaren": "Save review",
+    "Balans is geen eindbestemming, maar steeds opnieuw afstemmen.": "Balance is not a destination, it's constantly fine-tuning.",
+    "Back-up": "Backup", "Back-up maken": "Make a backup", "Back-up terugzetten": "Restore backup", "Dit bestand is geen Scheidingsbuddy-back-up.": "This file is not a Scheidingsbuddy backup.",
+    "Alles staat alleen op dit toestel. Maak af en toe een back-up, bijvoorbeeld naar iCloud Drive of je mail, zodat je niets kwijtraakt als je van telefoon wisselt.": "Everything is stored on this device only. Make a backup now and then, for example to iCloud Drive or your mail, so you don't lose anything when you switch phones.",
+    "Gaat goed:": "Going well:", "Vraagt aandacht:": "Needs attention:", "Deze week niet": "Not this week",
+    "Bel of spreek af met iemand die je steunt": "Call or meet someone who supports you", "Ga twee avonden deze week vóór 23:00 naar bed": "Go to bed before 23:00 two evenings this week",
+    "Plan een blok voor werk waar je energie van krijgt": "Block time for work that gives you energy", "Schrijf op wat je hoofd bezighoudt en regel er één ding van": "Write down what's on your mind and sort out one thing",
+    "Blok een middag in je agenda voor jezelf": "Block an afternoon in your calendar for yourself", "Kies één gewoonte om deze week op te letten": "Pick one habit to pay attention to this week",
+    "Loop een rondje door de buurt waar je naartoe wilt": "Walk around the neighbourhood you want to move to", "Maak één afspraak thuis die rust geeft": "Make one agreement at home that brings calm",
+    "Plan deze week een vast moment alleen met de kinderen": "Plan a fixed moment alone with the children this week", "Plan een kort, zakelijk overleg met Samara over de planning": "Plan a short, businesslike talk with Samara about the schedule",
+    "Regel één ding dat het thuis fijner maakt voor de kinderen": "Arrange one thing that makes home nicer for the children", "Stuur twee mensen uit je netwerk een bericht over een nieuwe klus": "Message two people in your network about a new job",
+    "Werk je bufferstand en geplande uitgaven bij": "Update your buffer balance and planned expenses", "Zet de volgende stap richting de mediator op papier": "Write down the next step towards the mediator",
+    "Zet de volgende stap voor je woning (bezichtiging, hypotheekadviseur)": "Take the next step for your home (viewing, mortgage adviser)", "Zet twee keer bewegen in je agenda": "Put two workouts in your calendar",
+    "daalt al vier weken": "has been falling for four weeks", "je verwacht al drie keer dat het slechter wordt": "you've expected it to get worse three times in a row", "je verwacht dat het slechter wordt": "you expect it to get worse",
+    "Scheidingsbuddy back-up": "Scheidingsbuddy backup", "Weergave: automatisch": "Appearance: automatic", "Weergave: licht": "Appearance: light", "Weergave: donker": "Appearance: dark",
+  };
+  const MONTHS_EN = { jan: "Jan", feb: "Feb", mrt: "Mar", apr: "Apr", mei: "May", jun: "Jun", jul: "Jul", aug: "Aug", sep: "Sep", okt: "Oct", nov: "Nov", dec: "Dec",
+    januari: "January", februari: "February", maart: "March", april: "April", juni: "June", juli: "July", augustus: "August", september: "September", oktober: "October", november: "November", december: "December" };
+  const monEn = t => t.replace(/\b(januari|februari|maart|april|mei|juni|juli|augustus|september|oktober|november|december|jan|feb|mrt|apr|jun|jul|aug|sep|okt|nov|dec)\b/g, m => MONTHS_EN[m] || (m === "mei" ? "May" : m));
+  const trName = n => EN[n] || n;
+  const RX = [
+    [/^(\d+) check-ins? in (.+), (\d+) in (.+)\. Gemiddelden per pilaar\.$/, (m, a, b, c, d) => `${a} check-in${a === "1" ? "" : "s"} in ${monEn(b)}, ${c} in ${monEn(d)}. Averages per pillar.`],
+    [/^(\d+) dingen? waar je nu mee bezig bent$/, (m, a) => `${a} thing${a === "1" ? "" : "s"} you're working on now`],
+    [/^(\d+) dingen? afgerond deze week\.\s*(?:(\d+) voor later\.)?$/, (m, a, b) => `${a} thing${a === "1" ? "" : "s"} finished this week.${b ? ` ${b} for later.` : ""}`],
+    [/^(\d+) voor later\.$/, (m, a) => `${a} for later.`],
+    [/^(\d+) onderde(?:el vraagt|len vragen) aandacht: (.+) →$/, (m, a, b) => `${a} area${a === "1" ? " needs" : "s need"} attention: ${b.split(", ").map(trName).join(", ")} →`],
+    [/^Actie voor (.+)$/, (m, a) => `Action for ${trName(a)}`],
+    [/^Week (\d+) · (.+)$/, (m, a, b) => `Week ${a} · ${monEn(b)}`],
+    [/^Week (\d+)$/, (m, a) => `Week ${a}`],
+    [/^(.+), week (\d+)$/, (m, a, b) => `${trName(a)}, week ${b}`],
+    [/^(Relatie|Wonen|Werk|Gezondheid) ([\d,]+|–)$/, (m, a, b) => `${trName(a)} ${b}`],
+    [/^([\d,]+) gemiddeld$/, (m, a) => `${a} average`],
+    [/^Vorige keer: (.+)$/, (m, a) => `Last time: ${a}`],
+    [/^Eerstvolgende stap: (.+)$/, (m, a) => `Next step: ${a}`],
+    [/^: daalt al vier weken, van ([\d,]+) naar ([\d,]+)\.$/, (m, a, b) => `: has been falling for four weeks, from ${a} to ${b}.`],
+    [/^: stijgt al vier weken, van ([\d,]+) naar ([\d,]+)\.$/, (m, a, b) => `: has been rising for four weeks, from ${a} to ${b}.`],
+    [/^: gemiddeld (.+)$/, (m, a) => `: average ${a}`],
+    [/^(.*)daalt al vier weken en staat op een (.+)$/, (m, a, b) => `${a}has been falling for four weeks and is at ${b}`],
+    [/^staat op een (.+)$/, (m, a) => `is at ${a}`],
+    [/^(januari|februari|maart|april|mei|juni|juli|augustus|september|oktober|november|december) (\d{4})$/, m => monEn(m)],
+    [/^Maandritme (.+)$/, (m, a) => `Monthly rhythm ${monEn(a)}`],
+    [/^Gedaan \((\d+)\)$/, (m, a) => `Done (${a})`],
+    [/^Doel (.+)\. Vul hieronder je huidige stand in\.$/, (m, a) => `Goal ${a}. Fill in your current balance below.`],
+    [/^Goed voor (.+) maand(?:en)? zonder klus\. Bij drie maanden geeft een gat tussen klussen geen stress meer\.$/, (m, a) => `Enough for ${a} month${a === "1" ? "" : "s"} without a job. At three months, a gap between jobs no longer causes stress.`],
+    [/^Je kunt (.+) maanden zonder klus\. Een maand later een nieuwe opdracht is dan geen ramp\.$/, (m, a) => `You can go ${a} months without a job. A new assignment a month late is no disaster then.`],
+    [/^Afgerond in (.+?): (.+)\.$/, (m, a, b) => `Finished in ${monEn(a)}: ${b}.`],
+    [/^Laatst bewaard op (.+)\.$/, (m, a) => `Last saved on ${monEn(a)}.`],
+    [/^Back-up opgeslagen als (.+)\.$/, (m, a) => `Backup saved as ${a}.`],
+    [/^Teruggezet: (\d+) check-ins en (\d+) taken\.$/, (m, a, b) => `Restored: ${a} check-ins and ${b} tasks.`],
+    [/^(\d+) van (\d+)$/, (m, a, b) => `${a} of ${b}`],
+    [/^Signalen worden zinvol vanaf vier check-ins \(je hebt er nu (\d+)\)\.$/, (m, a) => `Signals become meaningful from four check-ins (you have ${a} now).`],
+    [/^Geen aanhoudende negatieve trends\. Signalen worden zinvol vanaf vier check-ins \(je hebt er nu (\d+)\)\.$/, (m, a) => `No lasting negative trends. Signals become meaningful from four check-ins (you have ${a} now).`],
+    [/^Balans per pilaar: (.+)$/, (m, a) => `Balance per pillar: ${a.replace(/(Relatie|Wonen|Werk|Gezondheid)/g, trName)}`],
+    [/^Naar Leonardo da Vinci\..*Week (\d+)(?:, verschil met week (\d+))?\.$/, (m, a, b) => `After Leonardo da Vinci. The raised arms are Relationship and Work, the spread legs Home and Health. A limb fills up to your score and touches the circle at 10. The dotted mark is your minimum of 5, the dark mark on a column is last week. Week ${a}${b ? `, compared with week ${b}` : ""}.`],
+    [/^(.+) gemiddeld$/, (m, a) => `${a} average`],
+  ];
+  // Dutch number format (5,6 and 25.000) to English (5.6 and 25,000)
+  const numEn = t => t.replace(/\d{1,3}(?:\.\d{3})+(?:,\d+)?|\d+,\d+/g, n => n.replace(/\./g, "§").replace(/,/g, ".").replace(/§/g, ","));
+  function trText(raw) {
+    const t = raw.trim(); if (!t || !/[A-Za-zÀ-ÿ\d]/.test(t)) return null;
+    let out = EN[t];
+    if (out == null) for (const [re, fn] of RX) { if (re.test(t)) { out = t.replace(re, fn); break; } }
+    if (out == null && /\d,\d|\d\.\d{3}/.test(t) && !/[a-z]{3}/i.test(t)) out = t;
+    if (out == null) return null;
+    out = numEn(out);
+    return out === t ? null : raw.replace(t, out);
+  }
+  let lang = (() => { try { return localStorage.getItem("sb-lang") === "en" ? "en" : "nl"; } catch { return "nl"; } })();
+  const ATTRS = ["placeholder", "aria-label", "title"];
+  function translateTree(root) {
+    if (lang !== "en" || !root) return;
+    if (root.nodeType === 3) { if (!root.parentElement?.closest("script,style,textarea")) { const r = trText(root.nodeValue); if (r != null) root.nodeValue = r; } return; }
+    if (root.nodeType !== 1) return;
+    const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT); let n; const list = [];
+    while ((n = w.nextNode())) list.push(n);
+    list.forEach(x => { if (x.parentElement?.closest("script,style,textarea")) return; const r = trText(x.nodeValue); if (r != null) x.nodeValue = r; });
+    root.querySelectorAll("textarea").forEach(ta => { const v = EN[ta.value.trim()]; if (v) ta.value = v; });
+    [root, ...root.querySelectorAll("*")].forEach(el => ATTRS.forEach(a => { const v = el.getAttribute?.(a); if (v) { const r = trText(v); if (r != null) el.setAttribute(a, r); } }));
+  }
+  const mo = new MutationObserver(ms => { mo.disconnect(); ms.forEach(m => { if (m.type === "characterData") translateTree(m.target); else m.addedNodes.forEach(translateTree); if (m.type === "attributes") translateTree(m.target); }); observe(); });
+  const observe = () => mo.observe(document.body, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ATTRS });
+  if (lang === "en") { document.documentElement.lang = "en"; observe(); }
+
+  // ---------- theme and language buttons ----------
+  const ICON = {
+    auto: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg>',
+    light: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+    dark: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>',
+  };
+  const THEME_LABEL = { auto: "Weergave: automatisch", light: "Weergave: licht", dark: "Weergave: donker" };
+  let theme = (() => { try { const t = localStorage.getItem("sb-theme"); return t === "light" || t === "dark" ? t : "auto"; } catch { return "auto"; } })();
+  function applyTheme() {
+    if (theme === "auto") delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = theme;
+    const b = $("themeBtn"); b.innerHTML = ICON[theme]; b.setAttribute("aria-label", THEME_LABEL[theme]); b.title = THEME_LABEL[theme];
+  }
+  $("themeBtn").addEventListener("click", () => {
+    theme = { auto: "light", light: "dark", dark: "auto" }[theme];
+    try { if (theme === "auto") localStorage.removeItem("sb-theme"); else localStorage.setItem("sb-theme", theme); } catch {}
+    applyTheme(); route();
+  });
+  document.querySelectorAll(".seg [data-lang]").forEach(b => {
+    b.setAttribute("aria-pressed", String(b.dataset.lang === lang));
+    b.addEventListener("click", () => { if (b.dataset.lang === lang) return; try { localStorage.setItem("sb-lang", b.dataset.lang); } catch {} location.reload(); });
+  });
+  applyTheme();
+  translateTree(document.body);
 
   $("weekline").textContent = `Week ${weekNum(nowWeek)} · ${weekRange(nowWeek)}`;
   load(); showNotice();
