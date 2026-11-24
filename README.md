@@ -37,3 +37,20 @@ Open de app daarna altijd via het icoon op je beginscherm. Daar staan je gegeven
 ## Bijwerken
 
 Na een wijziging verhoog je `CACHE` in `sw.js` (bijvoorbeeld `scheidingsbuddy-v4`), zodat telefoons de nieuwe versie ophalen.
+
+## Inloggen met een code
+
+Wie de app opent, logt in of maakt een profiel aan met alleen een e-mailadres: je krijgt een code van 6 cijfers per mail (geen wachtwoord, geen link die in Safari opent in plaats van de app). Dezelfde aanpak als de Rotary club-app.
+
+- Code: `account.js` (praat rechtstreeks met de Supabase Auth- en REST-API, geen bibliotheek) en `auth-config.js` (Project URL + publishable/anon key; openbaar, geen geheimen). Leeg = inloggen staat uit.
+- Server: alleen e-mailadres (Supabase Auth) en naam (`profielen`). Check-ins, taken en financiën blijven op het toestel.
+- Profiel, uitloggen en account verwijderen: **Meer → Profiel**.
+
+Eenmalig instellen in Supabase:
+
+1. Nieuw project (EU-regio), SQL Editor → plak [`supabase/schema.sql`](supabase/schema.sql) → Run.
+2. Authentication → Sign In / Providers → Email: aan, "Confirm email" aan, Email OTP length 6, Email OTP expiration 3600.
+3. Authentication → Emails → SMTP: Resend (host `smtp.resend.com`, poort 465, gebruiker `resend`, wachtwoord = Resend API-key, afzender op een geverifieerd domein).
+4. Authentication → Emails → Templates: bij **Magic link** én **Confirm signup** onderwerp `Je inlogcode: {{ .Token }}` en de HTML uit [`supabase/templates/inlogcode.html`](supabase/templates/inlogcode.html).
+5. Authentication → URL Configuration: Site URL `https://scheidingsbuddy.vercel.app`.
+6. Zet Project URL en publishable key in `auth-config.js` en verhoog `CACHE` in `sw.js`.
