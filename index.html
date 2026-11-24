@@ -337,6 +337,7 @@ input[type="month"] { font: inherit; font-size: 16px; color: var(--fg); backgrou
       <h2>Nog geen check-ins</h2>
       <p class="muted">Eén keer per week, een minuut of vijf. Geef per onderdeel aan hoe het ervoor staat, hoe je je erover voelt en welke kant het op gaat. Na een paar weken zie je hier je trends.</p>
       <div><span class="example-tag">Voorbeeld, geen echte scores</span></div>
+      <div class="quarters" id="exampleFigure"></div>
       <div class="chart-box" id="exampleChart"></div>
       <div class="actions"><a class="btn" href="#checkin">Eerste check-in doen</a></div>
     </div>
@@ -884,6 +885,10 @@ input[type="month"] { font: inherit; font-size: 16px; color: var(--fg); backgrou
   }
   function renderExample() {
     const ex = [[6,6,5,6,7,7],[4,5,5,6,6,7],[7,6,6,5,5,6],[5,5,6,6,6,7]];
+    // the balance figure with example values, so the overview never looks empty
+    const mk = vals => ({ scores: Object.fromEntries(PILLARS.flatMap((p, k) => p.items.map(i => [i.id, { v: vals[k] }]))) });
+    const exNow = mk([5.6, 4.5, 5.7, 6.9]), exPrev = mk([5.2, 4.9, 5.3, 6.8]);
+    quarters($("exampleFigure"), exNow, avg([5.6, 4.5, 5.7, 6.9]), exPrev);
     lineChart($("exampleChart"), PILLARS.map((p, k) => ({ name: p.name, color: pc(p.id), vals: ex[k] })), ["W1","W2","W3","W4","W5","W6"], { h: 170, dashed: true, noHover: true, aria: "Voorbeeldgrafiek, geen echte scores" });
   }
 
