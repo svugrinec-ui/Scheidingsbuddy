@@ -28,7 +28,7 @@
     nameHint: ["Alleen je voornaam is genoeg.", "Your first name is enough."],
     name: ["Naam", "Name"],
     start: ["Aan de slag", "Get started"],
-    privacy: ["Je check-ins, taken en financiële gegevens blijven alleen op dit toestel. Op de server staan alleen je e-mailadres en naam.", "Your check-ins, tasks and financial data stay on this device only. The server only holds your email address and name."],
+    privacy: ["Je gegevens worden versleuteld bij je account bewaard, zodat ze op elk toestel terugkomen waarop je inlogt.", "Your data is stored encrypted with your account, so it comes back on every device where you log in."],
     badMail: ["Vul een geldig e-mailadres in.", "Enter a valid email address."],
     rate: ["Even geduld: je kunt over een minuut een nieuwe code vragen.", "Please wait a minute before requesting a new code."],
     sendFail: ["Versturen is niet gelukt. Probeer het zo nog eens.", "Sending failed. Please try again shortly."],
@@ -188,7 +188,7 @@
       if (!r.ok || !r.data?.access_token) { busy(f, false, t("login")); return showErr(f, t("badCode")); }
       keep(r.data);
       const naam = await loadProfile().catch(() => null);
-      if (naam) { closeGate(); addSheetEntry(); } else stepName();
+      if (naam) { closeGate(); addSheetEntry(); loggedIn(); } else stepName();
     });
     f.querySelector("#authResend").addEventListener("click", async () => { showErr(f, ""); const err = await requestCode(); showErr(f, err); if (!err) stepCode(true); });
     f.querySelector("#authOther").addEventListener("click", stepEmail);
@@ -209,7 +209,7 @@
       if (!naam) return inp.focus();
       busy(f, true); const ok = await saveName(naam).catch(() => false); busy(f, false, t("start"));
       if (!ok) return showErr(f, t("saveFail"));
-      closeGate(); addSheetEntry();
+      closeGate(); addSheetEntry(); loggedIn();
     });
     setTimeout(() => inp.focus(), 50);
   }
@@ -226,6 +226,7 @@
       <button class="btn" type="submit">${t("save")}</button>
       <div class="row"><button type="button" class="btn ghost" id="profOut">${t("logout")}</button><button type="button" class="btn ghost" id="profClose">${t("close")}</button></div>
       <p class="small muted center" style="margin:0">${t("logoutHint")}</p>
+      ${window.SBSync ? `<p class="small muted center" style="margin:0">${esc(window.SBSync.statusText())}</p>` : ""}
       <p class="small center" style="margin:0" id="profDelWrap"><button type="button" class="linkbtn danger" id="profDel">${t("del")}</button></p>`);
     gate.addEventListener("click", e => { if (e.target === gate) closeGate(); });
     f.addEventListener("submit", async e => {
@@ -250,6 +251,7 @@
   }
 
   async function logout() {
+    window.dispatchEvent(new Event("sb-logout"));
     const tk = session?.access_token;
     session = null; writeSession(null);
     if (tk) api("/auth/v1/logout?scope=local", { method: "POST", token: tk }).catch(() => {});
@@ -265,6 +267,9 @@
     b.addEventListener("click", openProfile);
     sheet.appendChild(b);
   }
+  const loggedIn = () => window.dispatchEvent(new Event("sb-login"));
+  // Voor sync.js: geldig toegangstoken en de ingelogde gebruiker.
+  window.SBAccount = { base: BASE, key: KEY, token, user: () => session?.user || null };
   const removeSheetEntry = () => document.getElementById("profileEntry")?.remove();
 
   // ---------- start ----------
