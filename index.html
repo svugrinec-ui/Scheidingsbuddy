@@ -574,8 +574,13 @@ input[type="month"] { font: inherit; font-size: 16px; color: var(--fg); backgrou
       </div>
       <span class="status" id="backupStatus" role="status"></span>
     </div>
-    <p class="small muted" style="text-align:center">Versie 18</p>
+    <p class="small muted" style="text-align:center">Versie 19</p>
   </section>
+
+  <!-- KINDEREN, AFSPRAKEN, ROUTE (kids.js) -->
+  <section id="view-kinderen" class="view" hidden></section>
+  <section id="view-afspraken" class="view" hidden></section>
+  <section id="view-route" class="view" hidden></section>
 </div>
 
 <nav class="tabs" aria-label="Onderdelen">
@@ -589,10 +594,15 @@ input[type="month"] { font: inherit; font-size: 16px; color: var(--fg); backgrou
 </nav>
 <div class="sheet-bg" id="moreBg" hidden></div>
 <div class="sheet" id="moreSheet" role="dialog" aria-label="Meer" hidden>
+  <a href="#kinderen"><span class="ico"><svg viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="8" cy="8" r="3"/><circle cx="17" cy="10" r="2.4"/><path d="M3 20c.6-3.2 2.6-5 5-5s4.4 1.8 5 5M13.5 20c.4-2.4 1.8-3.8 3.5-3.8s3.1 1.4 3.5 3.8"/></g></svg></span><span><b>Kinderen</b><small>Rooster, wat ze zien en hun app</small></span><span class="go">›</span></a>
+  <a href="#afspraken"><span class="ico"><svg viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h7l5 5v13H7z"/><path d="m10 14 2 2 4-4"/></g></svg></span><span><b>Onze afspraken</b><small>Samen akkoord, ook in kindertaal</small></span><span class="go">›</span></a>
+  <a href="#route"><span class="ico"><svg viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="6" cy="6" r="2"/><circle cx="6" cy="18" r="2"/><path d="M6 8v8M10 6h10M10 18h10M10 12h6"/></g></svg></span><span><b>Onze route</b><small>Van besluit tot nieuwe start</small></span><span class="go">›</span></a>
   <a href="wizard.html"><span class="ico"><svg><use href="#i-calc"/></svg></span><span><b>Financiële wizard</b><small>Je scheiding als DGA doorrekenen</small></span><span class="go">›</span></a>
   <a href="#terugblik" data-to="backup"><span class="ico"><svg><use href="#i-backup"/></svg></span><span><b>Back-up</b><small>Je gegevens bewaren of terugzetten</small></span><span class="go">›</span></a>
+  <button type="button" id="switchUser"><span class="ico"><svg viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3l3 3-3 3M20 6H8a4 4 0 0 0-4 4M7 21l-3-3 3-3M4 18h12a4 4 0 0 0 4-4"/></g></svg></span><span><b>Wissel van gebruiker</b><small>Ouder of kind</small></span><span class="go">›</span></button>
 </div>
 
+<script src="kids.js"></script>
 <script>
 (() => {
   const PILLARS = [
@@ -1294,10 +1304,11 @@ input[type="month"] { font: inherit; font-size: 16px; color: var(--fg); backgrou
 
   // ---------- routing ----------
   $("rangeSeg").addEventListener("click", e => { const b = e.target.closest("button"); if (b) { ui.range = b.dataset.v; saveUi(); renderOverview(); } });
-  const VIEWS = ["overzicht", "focus", "checkin", "terugblik"];
+  const VIEWS = ["overzicht", "focus", "checkin", "terugblik", ...(window.SBKids?.views || [])];
   function route() {
     const v = VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "overzicht";
-    VIEWS.forEach(x => { $("view-" + x).hidden = x !== v; const t = $("tab-" + x); if (x === v) t.setAttribute("aria-current", "page"); else t.removeAttribute("aria-current"); });
+    VIEWS.forEach(x => { $("view-" + x).hidden = x !== v; const t = $("tab-" + x); if (!t) return; if (x === v) t.setAttribute("aria-current", "page"); else t.removeAttribute("aria-current"); });
+    window.SBKids?.route(v);
     if (v === "overzicht") renderOverview();
     if (v === "focus") renderFocus();
     if (v === "checkin") renderCheckin();
@@ -1480,6 +1491,7 @@ input[type="month"] { font: inherit; font-size: 16px; color: var(--fg); backgrou
   // ---------- more sheet ----------
   function setMore(open) { $("moreSheet").hidden = !open; $("moreBg").hidden = !open; $("tab-meer").setAttribute("aria-expanded", String(open)); }
   $("tab-meer").addEventListener("click", () => setMore($("moreSheet").hidden));
+  $("switchUser").addEventListener("click", () => { setMore(false); window.SBKids?.switchUser(); });
   $("moreBg").addEventListener("click", () => setMore(false));
   document.addEventListener("keydown", e => { if (e.key === "Escape") setMore(false); });
   $("moreSheet").addEventListener("click", e => { const a = e.target.closest("a"); if (!a) return; setMore(false);

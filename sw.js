@@ -1,6 +1,6 @@
 // Offline support: app shell cache-first, fonts cached as they load.
-const CACHE = "scheidingsbuddy-v18";
-const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png", "./vitruvius-lijn.png", "./mask-relatie.png", "./mask-wonen.png", "./mask-werk.png", "./mask-gezondheid.png", "./wizard.html", "./auth-config.js", "./account.js"];
+const CACHE = "scheidingsbuddy-v19";
+const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png", "./vitruvius-lijn.png", "./mask-relatie.png", "./mask-wonen.png", "./mask-werk.png", "./mask-gezondheid.png", "./wizard.html", "./auth-config.js", "./account.js", "./kids.js"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));

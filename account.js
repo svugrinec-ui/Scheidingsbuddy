@@ -269,6 +269,10 @@
 
   // ---------- start ----------
   const start = () => {
+    // Eerst kiezen wie de app gebruikt; een kind logt niet in.
+    const who = window.SBPersona?.();
+    if (window.SBPersona && !who) { window.addEventListener("sb-persona", start, { once: true }); return; }
+    if (who?.role === "kind") return;
     if (!session) return openGate();
     addSheetEntry();
     // Op de achtergrond verversen; is de sessie ongeldig geworden, dan opnieuw inloggen.
